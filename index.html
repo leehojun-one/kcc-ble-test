@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>실측 연결 테스트 · KCC글라스 현장 영업툴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E7EAEA;
+    --surface:#FFFFFF;
+    --surface-2:#F4F6F6;
+    --ink:#15181B;
+    --muted:#6B7177;
+    --hair:#C9CFCF;
+    --laser:#00C775;
+    --laser-deep:#019257;
+    --alert:#D6492F;
+    --shadow:0 1px 0 rgba(21,24,27,.04), 0 8px 24px -16px rgba(21,24,27,.4);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'Space Grotesk',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--paper);color:var(--ink);font-family:var(--sans)}
+  body{
+    min-height:100dvh;
+    padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
+    max-width:680px;margin:0 auto;
+    background-image:
+      linear-gradient(rgba(21,24,27,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(21,24,27,.025) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+
+  /* ---- header ---- */
+  header{padding:20px 2px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1{font-size:23px;font-weight:600;letter-spacing:-.01em;margin-top:3px;line-height:1.1}
+  h1 .step{font-family:var(--mono);font-weight:500;color:var(--laser-deep)}
+
+  /* ---- connection bar ---- */
+  .conn{
+    background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    padding:14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);
+  }
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--alert);flex:none;position:relative}
+  .dot.on{background:var(--laser)}
+  .dot.on::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--laser);opacity:.5;animation:ping 1.6s ease-out infinite}
+  @keyframes ping{from{transform:scale(.6);opacity:.6}to{transform:scale(1.8);opacity:0}}
+  .conn .state{flex:1;min-width:0}
+  .conn .state b{font-size:14px;font-weight:600;display:block}
+  .conn .state span{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  button{font-family:var(--sans);cursor:pointer;border:none}
+  .btn{
+    background:var(--ink);color:#fff;font-size:14px;font-weight:600;
+    padding:12px 16px;border-radius:11px;letter-spacing:.01em;white-space:nowrap;
+    transition:transform .08s ease, opacity .15s ease;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--hair)}
+  .btn.green{background:var(--laser-deep)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ---- unsupported notice ---- */
+  .notice{
+    margin-top:12px;background:#fff;border:1px solid var(--alert);border-left-width:4px;
+    border-radius:12px;padding:14px 15px;display:none;
+  }
+  .notice b{color:var(--alert);font-size:14px}
+  .notice p{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .notice code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+
+  /* ---- measurement diagram ---- */
+  .panel{margin-top:14px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+  .panel-head h2{font-size:13px;font-weight:600;letter-spacing:.02em}
+  .panel-head .hint{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+  .diagram{width:100%;display:block;margin-top:4px}
+  .target{cursor:pointer}
+  .target .seg{stroke:var(--hair);stroke-width:2;fill:none}
+  .target .cap{stroke:var(--hair);stroke-width:2}
+  .target .lbl{font-family:var(--mono);font-size:9px;fill:var(--muted);font-weight:500}
+  .target .val{font-family:var(--mono);font-size:13px;fill:var(--ink);font-weight:600;letter-spacing:-.02em}
+  .target .hitbox{fill:transparent}
+
+  .target.filled .seg{stroke:var(--ink)}
+  .target.filled .cap{stroke:var(--ink)}
+
+  .target.active .seg,.target.active .cap{stroke:var(--laser-deep);animation:blink 1s steps(2,start) infinite}
+  .target.active .lbl{fill:var(--laser-deep)}
+  @keyframes blink{50%{opacity:.25}}
+
+  .frame{stroke:var(--ink);stroke-width:2.5;fill:#F4F6F6}
+  .frame-glass{fill:rgba(0,199,117,.05)}
+  .mullion{stroke:var(--hair);stroke-width:1.5;stroke-dasharray:3 4}
+
+  /* ---- result ---- */
+  .result{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:15px;box-shadow:var(--shadow)}
+  .card .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .card .big{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin-top:6px}
+  .card .big small{font-size:14px;color:var(--muted);font-weight:500;letter-spacing:0}
+  .card .sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:7px;line-height:1.6}
+  .card .sub i{font-style:normal;color:var(--ink)}
+
+  .note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;padding:0 4px}
+  .note b{color:var(--ink);font-weight:600}
+
+  /* ---- log ---- */
+  details.log{margin-top:14px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:hidden}
+  details.log summary{padding:13px 15px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  details.log summary::-webkit-details-marker{display:none}
+  details.log summary .chev{font-family:var(--mono);color:var(--muted);transition:transform .2s}
+  details.log[open] summary .chev{transform:rotate(90deg)}
+  .logbody{border-top:1px solid var(--hair);max-height:220px;overflow-y:auto;background:#0E1113}
+  .logbody pre{font-family:var(--mono);font-size:11px;line-height:1.7;color:#9BE7C4;padding:12px 15px;white-space:pre-wrap;word-break:break-all}
+  .logbody pre .t{color:#5A6470}
+  .logbody pre .m{color:#fff}
+  .logbody:empty::after{content:"수신 패킷이 여기 표시됩니다";color:#5A6470;font-family:var(--mono);font-size:11px;padding:12px 15px;display:block}
+
+  .toolbar{display:flex;gap:8px;margin-top:14px}
+  .toolbar .btn{flex:1;text-align:center}
+
+  footer{text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em;padding:22px 0 4px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow">KCC글라스 · 현장 영업툴</div>
+    <h1>실측 연결 테스트 <span class="step">/ S-A0</span></h1>
+  </div>
+</header>
+
+<div class="conn">
+  <div class="dot" id="dot"></div>
+  <div class="state">
+    <b id="stateText">연결 안 됨</b>
+    <span id="stateSub">Bosch GLM 50-27 CG · BLE 대기</span>
+  </div>
+  <button class="btn" id="connectBtn">측정기 연결</button>
+</div>
+
+<div class="notice" id="notice">
+  <b>이 브라우저는 블루투스를 지원하지 않아요</b>
+  <p>Web Bluetooth는 <code>안드로이드 크롬</code>에서 동작합니다. iPhone·iPad 사파리는 미지원이에요. 갤럭시탭 또는 안드로이드폰의 크롬으로 이 페이지를 열어주세요. (iOS에서 꼭 테스트하려면 App Store의 <code>Bluefy</code> 브라우저로 열면 됩니다.)</p>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>6포인트 실측</h2>
+    <span class="hint" id="progressHint">칸을 탭해서 시작</span>
+  </div>
+
+  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 포인트 도면">
+    <!-- window frame -->
+    <rect class="frame" x="78" y="58" width="184" height="174" rx="3"/>
+    <rect class="frame-glass" x="86" y="66" width="168" height="158"/>
+    <line class="mullion" x1="170" y1="66" x2="170" y2="224"/>
+
+    <!-- ===== WIDTH targets (상/중/하) : horizontal spans ===== -->
+    <g class="target" data-id="W-상" data-axis="W">
+      <line class="seg" x1="78" y1="44" x2="262" y2="44"/>
+      <line class="cap" x1="78" y1="38" x2="78" y2="50"/>
+      <line class="cap" x1="262" y1="38" x2="262" y2="50"/>
+      <text class="lbl" x="170" y="30" text-anchor="middle">W · 상</text>
+      <text class="val" x="170" y="44" text-anchor="middle" dy="-1" style="display:none"></text>
+      <rect class="hitbox" x="78" y="20" width="184" height="34"/>
+    </g>
+    <g class="target" data-id="W-중" data-axis="W">
+      <line class="seg" x1="98" y1="145" x2="242" y2="145"/>
+      <line class="cap" x1="98" y1="139" x2="98" y2="151"/>
+      <line class="cap" x1="242" y1="139" x2="242" y2="151"/>
+      <text class="lbl" x="170" y="135" text-anchor="middle" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">W · 중</text>
+      <text class="val" x="170" y="160" text-anchor="middle" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
+      <rect class="hitbox" x="98" y="120" width="144" height="44"/>
+    </g>
+    <g class="target" data-id="W-하" data-axis="W">
+      <line class="seg" x1="78" y1="246" x2="262" y2="246"/>
+      <line class="cap" x1="78" y1="240" x2="78" y2="252"/>
+      <line class="cap" x1="262" y1="240" x2="262" y2="252"/>
+      <text class="lbl" x="170" y="266" text-anchor="middle">W · 하</text>
+      <text class="val" x="170" y="246" text-anchor="middle" dy="-1" style="display:none"></text>
+      <rect class="hitbox" x="78" y="236" width="184" height="34"/>
+    </g>
+
+    <!-- ===== HEIGHT targets (좌/중/우) : vertical spans ===== -->
+    <g class="target" data-id="H-좌" data-axis="H">
+      <line class="seg" x1="62" y1="58" x2="62" y2="232"/>
+      <line class="cap" x1="56" y1="58" x2="68" y2="58"/>
+      <line class="cap" x1="56" y1="232" x2="68" y2="232"/>
+      <text class="lbl" x="40" y="148" text-anchor="middle" transform="rotate(-90 40 148)">H · 좌</text>
+      <text class="val" x="62" y="148" text-anchor="middle" transform="rotate(-90 62 148)" style="display:none"></text>
+      <rect class="hitbox" x="24" y="58" width="44" height="174"/>
+    </g>
+    <g class="target" data-id="H-중" data-axis="H">
+      <line class="seg" x1="170" y1="80" x2="170" y2="210"/>
+      <line class="cap" x1="164" y1="80" x2="176" y2="80"/>
+      <line class="cap" x1="164" y1="210" x2="176" y2="210"/>
+      <text class="lbl" x="186" y="148" text-anchor="middle" transform="rotate(-90 186 148)" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">H · 중</text>
+      <text class="val" x="155" y="148" text-anchor="middle" transform="rotate(-90 155 148)" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
+      <rect class="hitbox" x="150" y="80" width="40" height="130"/>
+    </g>
+    <g class="target" data-id="H-우" data-axis="H">
+      <line class="seg" x1="278" y1="58" x2="278" y2="232"/>
+      <line class="cap" x1="272" y1="58" x2="284" y2="58"/>
+      <line class="cap" x1="272" y1="232" x2="284" y2="232"/>
+      <text class="lbl" x="300" y="148" text-anchor="middle" transform="rotate(90 300 148)">H · 우</text>
+      <text class="val" x="278" y="148" text-anchor="middle" transform="rotate(-90 278 148)" style="display:none"></text>
+      <rect class="hitbox" x="272" y="58" width="44" height="174"/>
+    </g>
+  </svg>
+</div>
+
+<div class="result">
+  <div class="card">
+    <div class="k">넓이 W</div>
+    <div class="big" id="wOut">—<small> mm</small></div>
+    <div class="sub" id="wSub">최소 · 최대 · 평균 대기</div>
+  </div>
+  <div class="card">
+    <div class="k">높이 H</div>
+    <div class="big" id="hOut">—<small> mm</small></div>
+    <div class="sub" id="hSub">최소 · 최대 · 평균 대기</div>
+  </div>
+</div>
+
+<div class="note">
+  <b>제작치</b>는 지금 6포인트 중 <b>최소값</b>을 임시 기준으로 보여줍니다. 실제 KCC 보정 로직(클리어런스·반올림 규칙)은 이 자리에 그대로 끼워 넣으면 돼요.
+</div>
+
+<div class="toolbar">
+  <button class="btn ghost" id="resetBtn">초기화</button>
+  <button class="btn ghost" id="simBtn">시뮬레이션 측정</button>
+</div>
+
+<details class="log">
+  <summary>수신 로그 (디버그) <span class="chev">›</span></summary>
+  <div class="logbody"><pre id="logPre"></pre></div>
+</details>
+
+<footer>BOSCH GLM 50-27 CG · SVC 02a6c0d0 · CHR 02a6c0d1</footer>
+
+<script>
+/* ===== Bosch GLM 50-27 CG BLE 규약 (리버스 엔지니어링 공개 코드 기반) ===== */
+const SVC_UUID  = '02a6c0d0-0451-4000-b000-fb3210111989';
+const CHAR_UUID = '02a6c0d1-0451-4000-b000-fb3210111989';
+const ENABLE_CMD = new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]); // 측정값 전송 활성화
+const PKT_PREFIX = [0xc0,0x55,0x10,0x06];                            // 측정 패킷 식별자
+
+const ORDER = ['W-상','W-중','W-하','H-좌','H-중','H-우'];
+const data = {};                  // id -> mm
+let activeId = null;
+let device=null, characteristic=null;
+
+/* ---- DOM ---- */
+const $=s=>document.querySelector(s);
+const targets={};
+document.querySelectorAll('.target').forEach(g=>{ targets[g.dataset.id]=g; });
+const dot=$('#dot'), stateText=$('#stateText'), stateSub=$('#stateSub'), connectBtn=$('#connectBtn');
+
+/* ---- 로그 ---- */
+function log(msg, raw){
+  const pre=$('#logPre');
+  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  pre.innerHTML += `<span class="t">${t}</span>  ${raw?`<span class="m">${msg}</span>`:msg}\n`;
+  pre.parentElement.scrollTop=pre.parentElement.scrollHeight;
+}
+
+/* ---- 활성 칸 선택 ---- */
+function setActive(id){
+  if(activeId) targets[activeId].classList.remove('active');
+  activeId=id;
+  if(id){
+    targets[id].classList.add('active');
+    $('#progressHint').textContent = `'${id}' 측정 대기 — 보쉬 버튼 누르세요`;
+  }else{
+    $('#progressHint').textContent = filledCount()===6 ? '완료 · 6/6' : '칸을 탭해서 시작';
+  }
+}
+function filledCount(){ return Object.keys(data).length; }
+function nextEmpty(){ return ORDER.find(id=>!(id in data)) || null; }
+
+/* ---- 측정값 칸에 기록 ---- */
+function record(mm){
+  if(!activeId){ // 활성 칸 없으면 첫 빈 칸으로
+    const n=nextEmpty();
+    if(!n){ log('모든 칸이 채워졌습니다. 초기화 후 다시 측정하세요.'); return; }
+    setActive(n);
+  }
+  data[activeId]=mm;
+  const g=targets[activeId];
+  g.classList.add('filled'); g.classList.remove('active');
+  const val=g.querySelector('.val'), lbl=g.querySelector('.lbl');
+  val.textContent=mm; val.style.display=''; lbl.style.display='none';
+  log(`${activeId} = ${mm} mm`, true);
+  activeId=null;
+  const n=nextEmpty();
+  if(n) setActive(n); else { setActive(null); }
+  compute();
+}
+
+/* ---- W / H 종합 ---- */
+function compute(){
+  const w=['W-상','W-중','W-하'].filter(id=>id in data).map(id=>data[id]);
+  const h=['H-좌','H-중','H-우'].filter(id=>id in data).map(id=>data[id]);
+  fill('#wOut','#wSub',w);
+  fill('#hOut','#hSub',h);
+}
+function fill(outSel,subSel,arr){
+  const out=$(outSel), sub=$(subSel);
+  if(arr.length===0){ out.innerHTML='—<small> mm</small>'; sub.textContent='최소 · 최대 · 평균 대기'; return; }
+  const min=Math.min(...arr), max=Math.max(...arr), avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+  out.innerHTML=`${min}<small> mm</small>`;
+  sub.innerHTML=`최소 <i>${min}</i> · 최대 <i>${max}</i> · 평균 <i>${avg}</i><br>편차 <i>${max-min}</i> mm (${arr.length}/3)`;
+}
+
+/* ---- 패킷 파싱 ---- */
+function onPacket(dv){
+  const bytes=new Uint8Array(dv.buffer);
+  const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join(' ');
+  const isMeas = PKT_PREFIX.every((b,i)=>bytes[i]===b);
+  if(isMeas && bytes.length>=11){
+    const meters=dv.getFloat32(7,true);   // little-endian float32
+    const mm=Math.round(meters*1000);
+    log(`◀ ${hex}`);
+    record(mm);
+  }else{
+    log(`· ${hex}`);
+  }
+}
+
+/* ===== 연결 ===== */
+async function connect(){
+  if(!navigator.bluetooth){ $('#notice').style.display='block'; return; }
+  try{
+    stateSub.textContent='기기 검색 중…';
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{services:[SVC_UUID]}],
+      optionalServices:[SVC_UUID]
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnect);
+    log(`기기 선택: ${device.name||'(이름없음)'}`, true);
+
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(SVC_UUID);
+    characteristic = await svc.getCharacteristic(CHAR_UUID);
+
+    await characteristic.startNotifications();
+    characteristic.addEventListener('characteristicvaluechanged', e=>onPacket(e.target.value));
+
+    await characteristic.writeValueWithResponse(ENABLE_CMD); // 측정값 전송 ON
+    log('활성화 명령 전송: c0 55 02 01 00 1a', true);
+
+    setConnected(true);
+    if(!activeId && filledCount()<6) setActive(nextEmpty());
+  }catch(err){
+    log('오류: '+err.message);
+    stateSub.textContent = err.name==='NotFoundError' ? '기기 선택 취소됨' : err.message;
+  }
+}
+
+function setConnected(on){
+  dot.classList.toggle('on',on);
+  stateText.textContent = on ? '연결됨' : '연결 안 됨';
+  stateSub.textContent  = on ? `${device?.name||'Bosch GLM'} · 측정 대기` : 'Bosch GLM 50-27 CG · BLE 대기';
+  connectBtn.textContent = on ? '연결 해제' : '측정기 연결';
+  connectBtn.classList.toggle('green',false);
+}
+function onDisconnect(){ setConnected(false); setActive(activeId); log('기기 연결 끊김'); }
+
+connectBtn.addEventListener('click',()=>{
+  if(device?.gatt?.connected){ device.gatt.disconnect(); }
+  else connect();
+});
+
+/* ---- 칸 탭 ---- */
+Object.entries(targets).forEach(([id,g])=>{
+  g.addEventListener('click',()=>{
+    if(id in data){ // 이미 채워진 칸 → 재측정 위해 비우기
+      delete data[id];
+      g.classList.remove('filled');
+      g.querySelector('.val').style.display='none';
+      g.querySelector('.lbl').style.display='';
+      compute();
+    }
+    setActive(id);
+  });
+});
+
+/* ---- 초기화 / 시뮬레이션 ---- */
+$('#resetBtn').addEventListener('click',()=>{
+  for(const k in data) delete data[k];
+  Object.values(targets).forEach(g=>{
+    g.classList.remove('filled','active');
+    g.querySelector('.val').style.display='none';
+    g.querySelector('.lbl').style.display='';
+  });
+  activeId=null; compute(); setActive(null);
+  log('초기화');
+});
+$('#simBtn').addEventListener('click',()=>{
+  const base = 1480 + Math.floor(Math.random()*1000);
+  const mm = base + Math.floor(Math.random()*7)-3; // ±3mm 편차 흉내
+  log(`◀ (시뮬) ${mm} mm`);
+  record(mm);
+});
+
+/* ---- 초기 지원 체크 ---- */
+if(!navigator.bluetooth){
+  $('#notice').style.display='block';
+  connectBtn.disabled=true;
+}
+</script>
+</body>
+</html>
