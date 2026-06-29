@@ -3,418 +3,581 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>실측 연결 테스트 · KCC글라스 현장 영업툴</title>
+<title>현장 실측 · KCC글라스</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#E7EAEA;
-    --surface:#FFFFFF;
-    --surface-2:#F4F6F6;
-    --ink:#15181B;
-    --muted:#6B7177;
-    --hair:#C9CFCF;
-    --laser:#00C775;
-    --laser-deep:#019257;
-    --alert:#D6492F;
+    --paper:#E7EAEA; --surface:#FFFFFF; --surface-2:#F4F6F6;
+    --ink:#15181B; --muted:#6B7177; --hair:#C9CFCF;
+    --laser:#00C775; --laser-deep:#019257; --alert:#D6492F;
     --shadow:0 1px 0 rgba(21,24,27,.04), 0 8px 24px -16px rgba(21,24,27,.4);
     --mono:'IBM Plex Mono',ui-monospace,monospace;
     --sans:'Space Grotesk',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{background:var(--paper);color:var(--ink);font-family:var(--sans)}
-  body{
-    min-height:100dvh;
-    padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
-    max-width:680px;margin:0 auto;
-    background-image:
-      linear-gradient(rgba(21,24,27,.025) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(21,24,27,.025) 1px,transparent 1px);
-    background-size:22px 22px;
-  }
-
-  /* ---- header ---- */
-  header{padding:20px 2px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  h1{font-size:23px;font-weight:600;letter-spacing:-.01em;margin-top:3px;line-height:1.1}
-  h1 .step{font-family:var(--mono);font-weight:500;color:var(--laser-deep)}
-
-  /* ---- connection bar ---- */
-  .conn{
-    background:var(--surface);border:1px solid var(--hair);border-radius:14px;
-    padding:14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);
-  }
-  .dot{width:11px;height:11px;border-radius:50%;background:var(--alert);flex:none;position:relative}
+  body{max-width:520px;margin:0 auto;padding:0 14px calc(env(safe-area-inset-bottom) + 120px);
+    background-image:linear-gradient(rgba(21,24,27,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(21,24,27,.022) 1px,transparent 1px);
+    background-size:22px 22px;}
+  .top{position:sticky;top:0;z-index:20;background:var(--paper);padding-top:env(safe-area-inset-top);margin:0 -14px;padding-left:14px;padding-right:14px}
+  header{padding:14px 2px 10px;display:flex;align-items:center;justify-content:space-between}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1{font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.05}
+  .conn{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:9px 11px;box-shadow:var(--shadow)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--alert);flex:none;position:relative}
   .dot.on{background:var(--laser)}
-  .dot.on::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--laser);opacity:.5;animation:ping 1.6s ease-out infinite}
+  .dot.on::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--laser);opacity:.5;animation:ping 1.6s ease-out infinite}
   @keyframes ping{from{transform:scale(.6);opacity:.6}to{transform:scale(1.8);opacity:0}}
-  .conn .state{flex:1;min-width:0}
-  .conn .state b{font-size:14px;font-weight:600;display:block}
-  .conn .state span{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .conn .ct{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .conn .ct b{color:var(--ink);font-weight:600;display:block;font-family:var(--sans);font-size:12px}
   button{font-family:var(--sans);cursor:pointer;border:none}
-  .btn{
-    background:var(--ink);color:#fff;font-size:14px;font-weight:600;
-    padding:12px 16px;border-radius:11px;letter-spacing:.01em;white-space:nowrap;
-    transition:transform .08s ease, opacity .15s ease;
-  }
+  .btn{background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:9px 13px;border-radius:10px;white-space:nowrap;transition:transform .08s}
   .btn:active{transform:scale(.97)}
+  .btn.sm{padding:7px 11px;font-size:12px}
   .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--hair)}
-  .btn.green{background:var(--laser-deep)}
-  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn:disabled{opacity:.4}
 
-  /* ---- unsupported notice ---- */
-  .notice{
-    margin-top:12px;background:#fff;border:1px solid var(--alert);border-left-width:4px;
-    border-radius:12px;padding:14px 15px;display:none;
-  }
-  .notice b{color:var(--alert);font-size:14px}
-  .notice p{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
-  .notice code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+  .tray{display:flex;gap:7px;overflow-x:auto;padding:10px 2px 4px;scrollbar-width:none}
+  .tray::-webkit-scrollbar{display:none}
+  .chip-done{flex:none;background:var(--surface);border:1px solid var(--hair);border-radius:9px;padding:7px 10px;min-width:96px;box-shadow:var(--shadow)}
+  .chip-done .n{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.08em}
+  .chip-done .p{font-size:12px;font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  .chip-done .s{font-family:var(--mono);font-size:10px;color:var(--laser-deep);margin-top:2px}
+  .chip-cur{flex:none;border:1.5px dashed var(--laser-deep);border-radius:9px;padding:7px 12px;display:flex;align-items:center;font-family:var(--mono);font-size:11px;color:var(--laser-deep);font-weight:600}
 
-  /* ---- measurement diagram ---- */
-  .panel{margin-top:14px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
-  .panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
-  .panel-head h2{font-size:13px;font-weight:600;letter-spacing:.02em}
-  .panel-head .hint{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:15px;padding:14px;box-shadow:var(--shadow);margin-top:12px}
+  .step-h{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+  .step-n{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--ink);width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none}
+  .step-h h2{font-size:14px;font-weight:600}
+  .step-h .opt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted)}
 
-  .diagram{width:100%;display:block;margin-top:4px}
+  .photo-box{position:relative;width:100%;aspect-ratio:4/3;border:1.5px dashed var(--hair);border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+  .photo-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .photo-box .ph{display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--muted)}
+  .photo-box .ph svg{width:34px;height:34px;stroke:var(--muted);stroke-width:1.5;fill:none}
+  .photo-box .ph span{font-size:13px}
+  .photo-box.has .retake{position:absolute;right:9px;bottom:9px;background:rgba(21,24,27,.82);color:#fff;font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:8px;backdrop-filter:blur(4px)}
+  input[type=file]{display:none}
+
+  .loc-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+  .loc-chip{font-size:13px;padding:8px 13px;border-radius:9px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink);font-weight:500}
+  .loc-chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .loc-input{width:100%;font-family:var(--sans);font-size:14px;padding:11px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);color:var(--ink)}
+  .loc-input:focus{outline:none;border-color:var(--laser-deep)}
+
+  /* shape grid */
+  .shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .shape-cell{border:1px solid var(--hair);border-radius:11px;background:var(--surface-2);padding:8px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .shape-cell svg{width:100%;height:32px}
+  .shape-cell .sl{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+  .shape-cell .si{stroke:var(--ink);stroke-width:1.5;fill:none}
+  .shape-cell svg text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+  .shape-cell.sel{background:var(--ink);border-color:var(--ink)}
+  .shape-cell.sel .sl{color:#fff}
+  .shape-cell.sel .si{stroke:#fff}
+  .shape-cell.sel svg text{fill:#fff}
+
+  .side-row{display:none;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--hair)}
+  .side-row.show{display:flex}
+  .side-row .sl{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .side-toggle{display:flex;gap:6px;margin-left:auto}
+  .side-toggle button{font-size:13px;padding:7px 18px;border-radius:9px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink);font-weight:600}
+  .side-toggle button.sel{background:var(--laser-deep);color:#fff;border-color:var(--laser-deep)}
+
+  .diagram{width:100%;display:block}
   .target{cursor:pointer}
   .target .seg{stroke:var(--hair);stroke-width:2;fill:none}
   .target .cap{stroke:var(--hair);stroke-width:2}
   .target .lbl{font-family:var(--mono);font-size:9px;fill:var(--muted);font-weight:500}
   .target .val{font-family:var(--mono);font-size:13px;fill:var(--ink);font-weight:600;letter-spacing:-.02em}
   .target .hitbox{fill:transparent}
-
-  .target.filled .seg{stroke:var(--ink)}
-  .target.filled .cap{stroke:var(--ink)}
-
+  .target.filled .seg,.target.filled .cap{stroke:var(--ink)}
   .target.active .seg,.target.active .cap{stroke:var(--laser-deep);animation:blink 1s steps(2,start) infinite}
   .target.active .lbl{fill:var(--laser-deep)}
   @keyframes blink{50%{opacity:.25}}
-
   .frame{stroke:var(--ink);stroke-width:2.5;fill:#F4F6F6}
   .frame-glass{fill:rgba(0,199,117,.05)}
-  .mullion{stroke:var(--hair);stroke-width:1.5;stroke-dasharray:3 4}
+  .measure-hint{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
+  .measure-hint b{color:var(--laser-deep)}
 
-  /* ---- result ---- */
-  .result{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:15px;box-shadow:var(--shadow)}
-  .card .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .card .big{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin-top:6px}
-  .card .big small{font-size:14px;color:var(--muted);font-weight:500;letter-spacing:0}
-  .card .sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:7px;line-height:1.6}
-  .card .sub i{font-style:normal;color:var(--ink)}
+  /* jubent (unbalanced 7th) */
+  .jubent{display:none;margin-top:12px;border-top:1px dashed var(--hair);padding-top:12px}
+  .jubent.show{display:block}
+  .jubent .jl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:7px}
+  .jubent .jl b{color:var(--laser-deep)}
+  .jubent-cell{border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);padding:12px 14px;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .jubent-cell .jv{font-size:17px;color:var(--ink)}
+  .jubent-cell.active-cell{border-color:var(--laser-deep);color:var(--laser-deep);animation:blink 1s steps(2,start) infinite}
+  .jubent-cell.filled-cell{border-color:var(--ink);color:var(--ink)}
 
-  .note{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;padding:0 4px}
-  .note b{color:var(--ink);font-weight:600}
+  .size-row{display:flex;gap:10px}
+  .size-field{flex:1}
+  .size-field label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+  .size-field .inwrap{display:flex;align-items:baseline;border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);padding:9px 12px}
+  .size-field input{width:100%;border:none;background:transparent;font-family:var(--mono);font-size:24px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
+  .size-field input:focus{outline:none}
+  .size-field .u{font-family:var(--mono);font-size:12px;color:var(--muted);flex:none}
+  .size-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:7px;line-height:1.6}
 
-  /* ---- log ---- */
-  details.log{margin-top:14px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:hidden}
-  details.log summary{padding:13px 15px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  .actionbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(to top,var(--paper) 70%,transparent);padding:14px;padding-bottom:calc(env(safe-area-inset-bottom) + 14px)}
+  .actionbar .inner{max-width:520px;margin:0 auto;display:flex;gap:9px}
+  .actionbar .next{flex:1;background:var(--ink);color:#fff;font-size:15px;font-weight:600;padding:15px;border-radius:13px;box-shadow:var(--shadow)}
+  .actionbar .finish{flex:none;background:var(--laser-deep);color:#fff;font-size:14px;font-weight:600;padding:15px 16px;border-radius:13px;box-shadow:var(--shadow)}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:11px;opacity:0;transition:all .25s;z-index:40;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .notice{background:#fff;border:1px solid var(--alert);border-left-width:4px;border-radius:12px;padding:13px 14px;margin-top:12px;display:none}
+  .notice b{color:var(--alert);font-size:13px}
+  .notice p{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .notice code{font-family:var(--mono);font-size:11px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+
+  .overlay{position:fixed;inset:0;background:rgba(21,24,27,.5);z-index:50;display:none;align-items:flex-end;backdrop-filter:blur(2px)}
+  .overlay.show{display:flex}
+  .sheet{background:var(--paper);width:100%;max-width:520px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);max-height:86vh;overflow-y:auto;animation:up .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes up{from{transform:translateY(40px)}to{transform:translateY(0)}}
+  .sheet h3{font-size:18px;font-weight:600;margin-bottom:3px}
+  .sheet .lead{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px}
+  .sum-item{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:10px;margin-bottom:8px}
+  .sum-item img{width:50px;height:50px;border-radius:8px;object-fit:cover;flex:none;background:var(--surface-2)}
+  .sum-item .noimg{width:50px;height:50px;border-radius:8px;background:var(--surface-2);flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
+  .sum-item .info{flex:1;min-width:0}
+  .sum-item .info b{font-size:14px;font-weight:600}
+  .sum-item .info .tag{font-family:var(--mono);font-size:10px;color:var(--laser-deep);margin-left:6px}
+  .sum-item .info span{display:block;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
+  .sum-item .num{font-family:var(--mono);font-size:11px;color:var(--muted);flex:none}
+  .sheet .close{width:100%;margin-top:8px}
+
+  details.log{margin-top:12px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;overflow:hidden}
+  details.log summary{padding:11px 13px;font-size:12px;font-weight:600;cursor:pointer;list-style:none}
   details.log summary::-webkit-details-marker{display:none}
-  details.log summary .chev{font-family:var(--mono);color:var(--muted);transition:transform .2s}
-  details.log[open] summary .chev{transform:rotate(90deg)}
-  .logbody{border-top:1px solid var(--hair);max-height:220px;overflow-y:auto;background:#0E1113}
-  .logbody pre{font-family:var(--mono);font-size:11px;line-height:1.7;color:#9BE7C4;padding:12px 15px;white-space:pre-wrap;word-break:break-all}
-  .logbody pre .t{color:#5A6470}
-  .logbody pre .m{color:#fff}
-  .logbody:empty::after{content:"수신 패킷이 여기 표시됩니다";color:#5A6470;font-family:var(--mono);font-size:11px;padding:12px 15px;display:block}
-
-  .toolbar{display:flex;gap:8px;margin-top:14px}
-  .toolbar .btn{flex:1;text-align:center}
-
-  footer{text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em;padding:22px 0 4px}
+  .logbody{border-top:1px solid var(--hair);max-height:150px;overflow-y:auto;background:#0E1113}
+  .logbody pre{font-family:var(--mono);font-size:10px;line-height:1.7;color:#9BE7C4;padding:10px 13px;white-space:pre-wrap;word-break:break-all}
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <div class="eyebrow">KCC글라스 · 현장 영업툴</div>
-    <h1>실측 연결 테스트 <span class="step">/ S-A0</span></h1>
-  </div>
-</header>
-
-<div class="conn">
-  <div class="dot" id="dot"></div>
-  <div class="state">
-    <b id="stateText">연결 안 됨</b>
-    <span id="stateSub">Bosch GLM 50-27 CG · BLE 대기</span>
-  </div>
-  <button class="btn" id="connectBtn">측정기 연결</button>
+<div class="top">
+  <header>
+    <div><div class="eyebrow">KCC글라스 · 현장 실측</div><h1>실측 작업</h1></div>
+    <div class="conn">
+      <div class="dot" id="dot"></div>
+      <div class="ct"><b id="connState">미연결</b>측정기</div>
+      <button class="btn sm" id="connectBtn">연결</button>
+    </div>
+  </header>
+  <div class="tray" id="tray"><div class="chip-cur">창 1 작업 중</div></div>
 </div>
 
 <div class="notice" id="notice">
-  <b>이 브라우저는 블루투스를 지원하지 않아요</b>
-  <p>Web Bluetooth는 <code>안드로이드 크롬</code>에서 동작합니다. iPhone·iPad 사파리는 미지원이에요. 갤럭시탭 또는 안드로이드폰의 크롬으로 이 페이지를 열어주세요. (iOS에서 꼭 테스트하려면 App Store의 <code>Bluefy</code> 브라우저로 열면 됩니다.)</p>
+  <b>이 브라우저는 블루투스 미지원</b>
+  <p>측정기 연결은 <code>안드로이드 크롬</code>에서만 돼요. 사진·위치·형태·사이즈는 여기서도 테스트되고, 측정값은 "직접 입력"이나 "시뮬레이션"으로 채울 수 있어요.</p>
 </div>
 
-<div class="panel">
-  <div class="panel-head">
-    <h2>6포인트 실측</h2>
-    <span class="hint" id="progressHint">칸을 탭해서 시작</span>
-  </div>
+<!-- 1 사진 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">1</span><h2>창호 사진</h2><span class="opt">탭하면 카메라</span></div>
+  <label class="photo-box" id="photoBox">
+    <div class="ph" id="photoPlaceholder">
+      <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>
+      <span>창호 위치 촬영</span>
+    </div>
+    <span class="retake" id="retake" style="display:none">다시 촬영</span>
+    <input type="file" id="photoInput" accept="image/*" capture="environment">
+  </label>
+</div>
 
-  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 포인트 도면">
-    <!-- window frame -->
+<!-- 2 설치 위치 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">2</span><h2>설치 위치</h2></div>
+  <div class="loc-chips" id="locChips"></div>
+  <input class="loc-input" id="locInput" placeholder="직접 입력 (예: 거실 큰창, 안방 우측창)">
+</div>
+
+<!-- 3 창 형태 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">3</span><h2>창 형태</h2><span class="opt" id="shapeOpt">2W</span></div>
+  <div class="shape-grid" id="shapeGrid"></div>
+  <div class="side-row" id="sideRow">
+    <span class="sl" id="sideLabel">핸들 방향</span>
+    <div class="side-toggle">
+      <button id="sideLeft" class="sel">좌</button>
+      <button id="sideRight">우</button>
+    </div>
+  </div>
+</div>
+
+<!-- 4 실측 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">4</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
+  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 도면">
     <rect class="frame" x="78" y="58" width="184" height="174" rx="3"/>
     <rect class="frame-glass" x="86" y="66" width="168" height="158"/>
-    <line class="mullion" x1="170" y1="66" x2="170" y2="224"/>
-
-    <!-- ===== WIDTH targets (상/중/하) : horizontal spans ===== -->
+    <g id="mullions"></g>
     <g class="target" data-id="W-상" data-axis="W">
-      <line class="seg" x1="78" y1="44" x2="262" y2="44"/>
-      <line class="cap" x1="78" y1="38" x2="78" y2="50"/>
-      <line class="cap" x1="262" y1="38" x2="262" y2="50"/>
+      <line class="seg" x1="78" y1="44" x2="262" y2="44"/><line class="cap" x1="78" y1="38" x2="78" y2="50"/><line class="cap" x1="262" y1="38" x2="262" y2="50"/>
       <text class="lbl" x="170" y="30" text-anchor="middle">W · 상</text>
       <text class="val" x="170" y="44" text-anchor="middle" dy="-1" style="display:none"></text>
       <rect class="hitbox" x="78" y="20" width="184" height="34"/>
     </g>
     <g class="target" data-id="W-중" data-axis="W">
-      <line class="seg" x1="98" y1="145" x2="242" y2="145"/>
-      <line class="cap" x1="98" y1="139" x2="98" y2="151"/>
-      <line class="cap" x1="242" y1="139" x2="242" y2="151"/>
+      <line class="seg" x1="98" y1="145" x2="242" y2="145"/><line class="cap" x1="98" y1="139" x2="98" y2="151"/><line class="cap" x1="242" y1="139" x2="242" y2="151"/>
       <text class="lbl" x="170" y="135" text-anchor="middle" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">W · 중</text>
       <text class="val" x="170" y="160" text-anchor="middle" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
       <rect class="hitbox" x="98" y="120" width="144" height="44"/>
     </g>
     <g class="target" data-id="W-하" data-axis="W">
-      <line class="seg" x1="78" y1="246" x2="262" y2="246"/>
-      <line class="cap" x1="78" y1="240" x2="78" y2="252"/>
-      <line class="cap" x1="262" y1="240" x2="262" y2="252"/>
+      <line class="seg" x1="78" y1="246" x2="262" y2="246"/><line class="cap" x1="78" y1="240" x2="78" y2="252"/><line class="cap" x1="262" y1="240" x2="262" y2="252"/>
       <text class="lbl" x="170" y="266" text-anchor="middle">W · 하</text>
       <text class="val" x="170" y="246" text-anchor="middle" dy="-1" style="display:none"></text>
       <rect class="hitbox" x="78" y="236" width="184" height="34"/>
     </g>
-
-    <!-- ===== HEIGHT targets (좌/중/우) : vertical spans ===== -->
     <g class="target" data-id="H-좌" data-axis="H">
-      <line class="seg" x1="62" y1="58" x2="62" y2="232"/>
-      <line class="cap" x1="56" y1="58" x2="68" y2="58"/>
-      <line class="cap" x1="56" y1="232" x2="68" y2="232"/>
+      <line class="seg" x1="62" y1="58" x2="62" y2="232"/><line class="cap" x1="56" y1="58" x2="68" y2="58"/><line class="cap" x1="56" y1="232" x2="68" y2="232"/>
       <text class="lbl" x="40" y="148" text-anchor="middle" transform="rotate(-90 40 148)">H · 좌</text>
       <text class="val" x="62" y="148" text-anchor="middle" transform="rotate(-90 62 148)" style="display:none"></text>
       <rect class="hitbox" x="24" y="58" width="44" height="174"/>
     </g>
     <g class="target" data-id="H-중" data-axis="H">
-      <line class="seg" x1="170" y1="80" x2="170" y2="210"/>
-      <line class="cap" x1="164" y1="80" x2="176" y2="80"/>
-      <line class="cap" x1="164" y1="210" x2="176" y2="210"/>
+      <line class="seg" x1="170" y1="80" x2="170" y2="210"/><line class="cap" x1="164" y1="80" x2="176" y2="80"/><line class="cap" x1="164" y1="210" x2="176" y2="210"/>
       <text class="lbl" x="186" y="148" text-anchor="middle" transform="rotate(-90 186 148)" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">H · 중</text>
       <text class="val" x="155" y="148" text-anchor="middle" transform="rotate(-90 155 148)" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
       <rect class="hitbox" x="150" y="80" width="40" height="130"/>
     </g>
     <g class="target" data-id="H-우" data-axis="H">
-      <line class="seg" x1="278" y1="58" x2="278" y2="232"/>
-      <line class="cap" x1="272" y1="58" x2="284" y2="58"/>
-      <line class="cap" x1="272" y1="232" x2="284" y2="232"/>
+      <line class="seg" x1="278" y1="58" x2="278" y2="232"/><line class="cap" x1="272" y1="58" x2="284" y2="58"/><line class="cap" x1="272" y1="232" x2="284" y2="232"/>
       <text class="lbl" x="300" y="148" text-anchor="middle" transform="rotate(90 300 148)">H · 우</text>
       <text class="val" x="278" y="148" text-anchor="middle" transform="rotate(-90 278 148)" style="display:none"></text>
       <rect class="hitbox" x="272" y="58" width="44" height="174"/>
     </g>
   </svg>
-</div>
+  <div class="measure-hint" id="measureHint">칸을 탭하고 측정기 버튼을 누르세요</div>
 
-<div class="result">
-  <div class="card">
-    <div class="k">넓이 W</div>
-    <div class="big" id="wOut">—<small> mm</small></div>
-    <div class="sub" id="wSub">최소 · 최대 · 평균 대기</div>
+  <!-- 7th: 주벤트 W (언발란스) -->
+  <div class="jubent" id="jubentRow">
+    <div class="jl">7번째 실측 · <b>주벤트 W</b> (언발란스 추가)</div>
+    <div class="jubent-cell" id="jubentCell"><span>탭하고 측정</span><span><span class="jv" id="jubentVal">—</span> mm</span></div>
   </div>
-  <div class="card">
-    <div class="k">높이 H</div>
-    <div class="big" id="hOut">—<small> mm</small></div>
-    <div class="sub" id="hSub">최소 · 최대 · 평균 대기</div>
+
+  <div style="display:flex;gap:8px;margin-top:11px">
+    <button class="btn ghost sm" id="manualBtn" style="flex:1">직접 입력</button>
+    <button class="btn ghost sm" id="simBtn" style="flex:1">시뮬레이션</button>
   </div>
 </div>
 
-<div class="note">
-  <b>제작치</b>는 지금 6포인트 중 <b>최소값</b>을 임시 기준으로 보여줍니다. 실제 KCC 보정 로직(클리어런스·반올림 규칙)은 이 자리에 그대로 끼워 넣으면 돼요.
+<!-- 5 확정 사이즈 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">5</span><h2>확정 사이즈</h2><span class="opt">수정 가능</span></div>
+  <div class="size-row">
+    <div class="size-field"><label>넓이 W</label><div class="inwrap"><input id="wInput" type="number" inputmode="numeric" placeholder="—"><span class="u">mm</span></div></div>
+    <div class="size-field"><label>높이 H</label><div class="inwrap"><input id="hInput" type="number" inputmode="numeric" placeholder="—"><span class="u">mm</span></div></div>
+  </div>
+  <div class="size-meta" id="sizeMeta">실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)</div>
 </div>
 
-<div class="toolbar">
-  <button class="btn ghost" id="resetBtn">초기화</button>
-  <button class="btn ghost" id="simBtn">시뮬레이션 측정</button>
-</div>
+<details class="log"><summary>수신 로그 (디버그)</summary><div class="logbody"><pre id="logPre"></pre></div></details>
 
-<details class="log">
-  <summary>수신 로그 (디버그) <span class="chev">›</span></summary>
-  <div class="logbody"><pre id="logPre"></pre></div>
-</details>
+<div class="actionbar"><div class="inner">
+  <button class="next" id="nextBtn">이 창 저장하고 다음 창 →</button>
+  <button class="finish" id="finishBtn">실측 완료</button>
+</div></div>
 
-<footer>BOSCH GLM 50-27 CG · SVC 02a6c0d0 · CHR 02a6c0d1</footer>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay"><div class="sheet">
+  <h3>실측 완료</h3>
+  <div class="lead" id="sumLead"></div>
+  <div id="sumList"></div>
+  <button class="btn close" id="closeSheet">닫기</button>
+</div></div>
 
 <script>
-/* ===== Bosch GLM 50-27 CG BLE 규약 (리버스 엔지니어링 공개 코드 기반) ===== */
-const SVC_UUID  = '02a6c0d0-0451-4000-b000-fb3210111989';
-const CHAR_UUID = '02a6c0d1-0451-4000-b000-fb3210111989';
-const ENABLE_CMD = new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]); // 측정값 전송 활성화
-const PKT_PREFIX = [0xc0,0x55,0x10,0x06];                            // 측정 패킷 식별자
+/* ===== Bosch GLM 50-27 CG BLE ===== */
+const SVC_UUID='02a6c0d0-0451-4000-b000-fb3210111989';
+const CHAR_UUID='02a6c0d1-0451-4000-b000-fb3210111989';
+const ENABLE_CMD=new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]);
+const PKT_PREFIX=[0xc0,0x55,0x10,0x06];
+const SVGNS='http://www.w3.org/2000/svg';
+const LOCATIONS=['거실창','안방창','작은방창','주방창','베란다창','욕실창'];
 
-const ORDER = ['W-상','W-중','W-하','H-좌','H-중','H-우'];
-const data = {};                  // id -> mm
-let activeId = null;
+/* 창 형태 정의 */
+const SHAPES=[
+  {id:'2W',label:'2W'},{id:'2W12',label:'2W(1:2)'},{id:'2WU',label:'2WU'},{id:'3W',label:'3W'},
+  {id:'3WU',label:'3WU'},{id:'4W',label:'4W'},{id:'FIX',label:'FIX'},{id:'TD',label:'T/D'}
+];
+const SHAPE_DEFS={
+  '2W':{div:[0.5]},
+  '2W12':{div:[1/3],lab:['1','2']},
+  '2WU':{unbalanced:true,side:true},
+  '3W':{div:[0.25,0.75],lab:['1','2','1']},
+  '3WU':{unbalanced:true,triple:true},
+  '4W':{div:[0.25,0.5,0.75]},
+  'FIX':{fix:true},
+  'TD':{handle:true,side:true}
+};
+function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id; }
+
 let device=null, characteristic=null;
+let windows=[];
+let current=blankWindow();
+let activeId=null;
+function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null}; }
 
-/* ---- DOM ---- */
 const $=s=>document.querySelector(s);
-const targets={};
-document.querySelectorAll('.target').forEach(g=>{ targets[g.dataset.id]=g; });
-const dot=$('#dot'), stateText=$('#stateText'), stateSub=$('#stateSub'), connectBtn=$('#connectBtn');
 
-/* ---- 로그 ---- */
-function log(msg, raw){
-  const pre=$('#logPre');
-  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});
-  pre.innerHTML += `<span class="t">${t}</span>  ${raw?`<span class="m">${msg}</span>`:msg}\n`;
-  pre.parentElement.scrollTop=pre.parentElement.scrollHeight;
-}
+/* ===== 측정 셀 추상화 (SVG 6칸 + 주벤트 HTML 1칸) ===== */
+const cells={};
+document.querySelectorAll('.target').forEach(g=>{
+  cells[g.dataset.id]={
+    setActive(on){ g.classList.toggle('active',on); },
+    setVal(mm){ g.classList.add('filled');g.classList.remove('active');
+      g.querySelector('.val').textContent=mm;g.querySelector('.val').style.display='';g.querySelector('.lbl').style.display='none'; },
+    clear(){ g.classList.remove('filled','active');
+      g.querySelector('.val').style.display='none';g.querySelector('.lbl').style.display=''; }
+  };
+});
+(function(){
+  const row=$('#jubentCell'), val=$('#jubentVal');
+  cells['주벤트-W']={
+    setActive(on){ row.classList.toggle('active-cell',on); },
+    setVal(mm){ row.classList.add('filled-cell');row.classList.remove('active-cell');val.textContent=mm; },
+    clear(){ row.classList.remove('filled-cell','active-cell');val.textContent='—'; }
+  };
+})();
 
-/* ---- 활성 칸 선택 ---- */
-function setActive(id){
-  if(activeId) targets[activeId].classList.remove('active');
-  activeId=id;
-  if(id){
-    targets[id].classList.add('active');
-    $('#progressHint').textContent = `'${id}' 측정 대기 — 보쉬 버튼 누르세요`;
-  }else{
-    $('#progressHint').textContent = filledCount()===6 ? '완료 · 6/6' : '칸을 탭해서 시작';
-  }
-}
-function filledCount(){ return Object.keys(data).length; }
-function nextEmpty(){ return ORDER.find(id=>!(id in data)) || null; }
+/* ===== 측정 순서 (언발란스면 주벤트 추가) ===== */
+function isUnbalanced(){ return !!(SHAPE_DEFS[current.shape]||{}).unbalanced; }
+function getOrder(){ const b=['W-상','W-중','W-하','H-좌','H-중','H-우']; if(isUnbalanced()) b.push('주벤트-W'); return b; }
 
-/* ---- 측정값 칸에 기록 ---- */
-function record(mm){
-  if(!activeId){ // 활성 칸 없으면 첫 빈 칸으로
-    const n=nextEmpty();
-    if(!n){ log('모든 칸이 채워졌습니다. 초기화 후 다시 측정하세요.'); return; }
-    setActive(n);
-  }
-  data[activeId]=mm;
-  const g=targets[activeId];
-  g.classList.add('filled'); g.classList.remove('active');
-  const val=g.querySelector('.val'), lbl=g.querySelector('.lbl');
-  val.textContent=mm; val.style.display=''; lbl.style.display='none';
-  log(`${activeId} = ${mm} mm`, true);
-  activeId=null;
-  const n=nextEmpty();
-  if(n) setActive(n); else { setActive(null); }
-  compute();
-}
+/* ---- toast / log ---- */
+let toastT;
+function toast(m){ const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+function log(m){ const p=$('#logPre');const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});p.textContent+=`${t}  ${m}\n`;p.parentElement.scrollTop=p.parentElement.scrollHeight; }
 
-/* ---- W / H 종합 ---- */
-function compute(){
-  const w=['W-상','W-중','W-하'].filter(id=>id in data).map(id=>data[id]);
-  const h=['H-좌','H-중','H-우'].filter(id=>id in data).map(id=>data[id]);
-  fill('#wOut','#wSub',w);
-  fill('#hOut','#hSub',h);
-}
-function fill(outSel,subSel,arr){
-  const out=$(outSel), sub=$(subSel);
-  if(arr.length===0){ out.innerHTML='—<small> mm</small>'; sub.textContent='최소 · 최대 · 평균 대기'; return; }
-  const min=Math.min(...arr), max=Math.max(...arr), avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
-  out.innerHTML=`${min}<small> mm</small>`;
-  sub.innerHTML=`최소 <i>${min}</i> · 최대 <i>${max}</i> · 평균 <i>${avg}</i><br>편차 <i>${max-min}</i> mm (${arr.length}/3)`;
-}
-
-/* ---- 패킷 파싱 ---- */
-function onPacket(dv){
-  const bytes=new Uint8Array(dv.buffer);
-  const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join(' ');
-  const isMeas = PKT_PREFIX.every((b,i)=>bytes[i]===b);
-  if(isMeas && bytes.length>=11){
-    const meters=dv.getFloat32(7,true);   // little-endian float32
-    const mm=Math.round(meters*1000);
-    log(`◀ ${hex}`);
-    record(mm);
-  }else{
-    log(`· ${hex}`);
-  }
-}
-
-/* ===== 연결 ===== */
-async function connect(){
-  if(!navigator.bluetooth){ $('#notice').style.display='block'; return; }
-  try{
-    stateSub.textContent='기기 검색 중…';
-    device = await navigator.bluetooth.requestDevice({
-      filters:[{services:[SVC_UUID]}],
-      optionalServices:[SVC_UUID]
-    });
-    device.addEventListener('gattserverdisconnected', onDisconnect);
-    log(`기기 선택: ${device.name||'(이름없음)'}`, true);
-
-    const server = await device.gatt.connect();
-    const svc = await server.getPrimaryService(SVC_UUID);
-    characteristic = await svc.getCharacteristic(CHAR_UUID);
-
-    await characteristic.startNotifications();
-    characteristic.addEventListener('characteristicvaluechanged', e=>onPacket(e.target.value));
-
-    await characteristic.writeValueWithResponse(ENABLE_CMD); // 측정값 전송 ON
-    log('활성화 명령 전송: c0 55 02 01 00 1a', true);
-
-    setConnected(true);
-    if(!activeId && filledCount()<6) setActive(nextEmpty());
-  }catch(err){
-    log('오류: '+err.message);
-    stateSub.textContent = err.name==='NotFoundError' ? '기기 선택 취소됨' : err.message;
-  }
-}
-
-function setConnected(on){
-  dot.classList.toggle('on',on);
-  stateText.textContent = on ? '연결됨' : '연결 안 됨';
-  stateSub.textContent  = on ? `${device?.name||'Bosch GLM'} · 측정 대기` : 'Bosch GLM 50-27 CG · BLE 대기';
-  connectBtn.textContent = on ? '연결 해제' : '측정기 연결';
-  connectBtn.classList.toggle('green',false);
-}
-function onDisconnect(){ setConnected(false); setActive(activeId); log('기기 연결 끊김'); }
-
-connectBtn.addEventListener('click',()=>{
-  if(device?.gatt?.connected){ device.gatt.disconnect(); }
-  else connect();
+/* ===== 1 사진 ===== */
+$('#photoInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ current.photo=r.result; const box=$('#photoBox');
+    let img=box.querySelector('img'); if(!img){img=document.createElement('img');box.prepend(img);} img.src=r.result;
+    $('#photoPlaceholder').style.display='none'; $('#retake').style.display=''; box.classList.add('has'); };
+  r.readAsDataURL(f);
 });
 
-/* ---- 칸 탭 ---- */
-Object.entries(targets).forEach(([id,g])=>{
+/* ===== 2 위치 ===== */
+const chipsWrap=$('#locChips');
+LOCATIONS.forEach(name=>{
+  const c=document.createElement('button'); c.className='loc-chip'; c.textContent=name;
+  c.addEventListener('click',()=>{ current.location=name; $('#locInput').value='';
+    document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); });
+  chipsWrap.appendChild(c);
+});
+$('#locInput').addEventListener('input',e=>{ current.location=e.target.value.trim();
+  document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); });
+
+/* ===== 3 창 형태 ===== */
+function shapeIcon(id){
+  const R='<rect class="si" x="6" y="6" width="48" height="28"/>';
+  const v=x=>`<line class="si" x1="${x}" y1="6" x2="${x}" y2="34"/>`;
+  switch(id){
+    case '2W': return `<svg viewBox="0 0 60 40">${R}${v(30)}</svg>`;
+    case '2W12': return `<svg viewBox="0 0 60 40">${R}${v(22)}<text x="14" y="23" text-anchor="middle">1</text><text x="38" y="23" text-anchor="middle">2</text></svg>`;
+    case '2WU': return `<svg viewBox="0 0 60 40">${R}${v(18)}<text x="12" y="23" text-anchor="middle">U</text></svg>`;
+    case '3W': return `<svg viewBox="0 0 60 40">${R}${v(20)}${v(40)}<text x="13" y="23" text-anchor="middle">1</text><text x="30" y="23" text-anchor="middle">2</text><text x="47" y="23" text-anchor="middle">1</text></svg>`;
+    case '3WU': return `<svg viewBox="0 0 60 40">${R}${v(16)}${v(44)}<text x="11" y="23" text-anchor="middle">U</text><text x="49" y="23" text-anchor="middle">U</text></svg>`;
+    case '4W': return `<svg viewBox="0 0 60 40">${R}${v(18)}${v(30)}${v(42)}</svg>`;
+    case 'FIX': return `<svg viewBox="0 0 60 40">${R}<text x="30" y="24" text-anchor="middle" style="font-size:13px">F</text></svg>`;
+    case 'TD': return `<svg viewBox="0 0 60 40">${R}<polyline class="si" points="6,6 54,20 6,34"/></svg>`;
+  }
+  return '';
+}
+const grid=$('#shapeGrid');
+SHAPES.forEach(s=>{
+  const c=document.createElement('button'); c.className='shape-cell'; c.dataset.id=s.id;
+  c.innerHTML=`${shapeIcon(s.id)}<span class="sl">${s.label}</span>`;
+  c.addEventListener('click',()=>selectShape(s.id));
+  grid.appendChild(c);
+});
+function selectShape(id){
+  current.shape=id;
+  document.querySelectorAll('.shape-cell').forEach(x=>x.classList.toggle('sel',x.dataset.id===id));
+  $('#shapeOpt').textContent=shapeLabel(id);
+  const def=SHAPE_DEFS[id]||{};
+  // 좌/우 토글 표시
+  const sideRow=$('#sideRow');
+  if(def.side){ sideRow.classList.add('show'); $('#sideLabel').textContent = def.handle?'핸들 방향':'주벤트 방향'; }
+  else sideRow.classList.remove('show');
+  // 주벤트 7번째 칸
+  const jr=$('#jubentRow');
+  if(def.unbalanced && !def.triple){ jr.classList.add('show'); }
+  else if(def.unbalanced && def.triple){ jr.classList.add('show'); } // 3WU도 주벤트 측정
+  else { jr.classList.remove('show'); if('주벤트-W' in current.data){ delete current.data['주벤트-W']; cells['주벤트-W'].clear(); } }
+  renderShapeDiagram(); updateMeasCount();
+  if(activeId==='주벤트-W' && !isUnbalanced()){ setActive(nextEmpty()); }
+}
+function selectSide(s){
+  current.side=s;
+  $('#sideLeft').classList.toggle('sel',s==='좌');
+  $('#sideRight').classList.toggle('sel',s==='우');
+  renderShapeDiagram();
+}
+$('#sideLeft').addEventListener('click',()=>selectSide('좌'));
+$('#sideRight').addEventListener('click',()=>selectSide('우'));
+
+/* 형태 도면 (가운데 분할/대각선) */
+function md(tag,a){ const e=document.createElementNS(SVGNS,tag); for(const k in a)e.setAttribute(k,a[k]); return e; }
+function renderShapeDiagram(){
+  const g=$('#mullions'); g.innerHTML='';
+  const def=SHAPE_DEFS[current.shape]||{};
+  const x0=78,W=184,yT=64,yB=226,ym=145;
+  const vline=x=>g.appendChild(md('line',{x1:x,y1:yT,x2:x,y2:yB,stroke:'#15181B','stroke-width':2}));
+  const txt=(x,s,small)=>{ const t=md('text',{x,y:small?80:148,'text-anchor':'middle','font-family':"'IBM Plex Mono',monospace",'font-size':small?10:12,fill:small?'#019257':'#6B7177'}); t.textContent=s; g.appendChild(t); };
+  if(def.fix){ const t=md('text',{x:170,y:150,'text-anchor':'middle','font-family':"'IBM Plex Mono',monospace",'font-size':22,fill:'#15181B'});t.textContent='F';g.appendChild(t); return; }
+  if(def.handle){
+    const side=current.side||'좌';
+    const apexX=side==='좌'?262:78, baseX=side==='좌'?78:262;
+    g.appendChild(md('polyline',{points:`${baseX},${yT} ${apexX},${ym} ${baseX},${yB}`,fill:'none',stroke:'#15181B','stroke-width':1.6}));
+    const hx=side==='좌'?96:244, dir=side==='좌'?-1:1, tip=hx+dir*14;
+    g.appendChild(md('line',{x1:hx,y1:ym,x2:tip,y2:ym,stroke:'#019257','stroke-width':2.2}));
+    g.appendChild(md('polyline',{points:`${tip-dir*6},${ym-4} ${tip},${ym} ${tip-dir*6},${ym+4}`,fill:'none',stroke:'#019257','stroke-width':2.2}));
+    return;
+  }
+  if(def.unbalanced){
+    const side=current.side||'좌';
+    if(def.triple){ vline(x0+W*0.2);vline(x0+W*0.5);vline(x0+W*0.8); txt(x0+W*0.1,'주',true);txt(x0+W*0.9,'주',true); }
+    else if(side==='좌'){ vline(x0+W*0.3); txt(x0+W*0.15,'주',true); }
+    else { vline(x0+W*0.7); txt(x0+W*0.85,'주',true); }
+    return;
+  }
+  (def.div||[]).forEach(r=>vline(x0+W*r));
+  if(def.lab){ const e=[0,...def.div,1]; for(let i=0;i<def.lab.length;i++){ txt(x0+W*((e[i]+e[i+1])/2),def.lab[i]); } }
+}
+
+/* ===== 4 측정 ===== */
+function nextEmpty(){ return getOrder().find(id=>!(id in current.data))||null; }
+function filledCount(){ return getOrder().filter(id=>id in current.data).length; }
+function updateMeasCount(){ $('#measOpt').textContent=`${filledCount()} / ${getOrder().length}`; }
+function labelOf(id){ return id==='주벤트-W'?'주벤트 W':id; }
+
+function setActive(id){
+  if(activeId && cells[activeId]) cells[activeId].setActive(false);
+  activeId=id;
+  if(id){ cells[id].setActive(true); $('#measureHint').innerHTML=`<b>${labelOf(id)}</b> 측정 대기 — 버튼을 누르세요`; }
+  else $('#measureHint').textContent = filledCount()===getOrder().length?'실측 완료 ✓':'칸을 탭하고 측정하세요';
+}
+function record(mm){
+  if(!activeId){ const n=nextEmpty(); if(!n){toast('실측이 모두 찼어요');return;} setActive(n); }
+  current.data[activeId]=mm; cells[activeId].setVal(mm); log(`${labelOf(activeId)} = ${mm} mm`);
+  activeId=null; updateMeasCount();
+  const n=nextEmpty(); if(n) setActive(n); else setActive(null);
+  computeSize();
+}
+function computeSize(){
+  const w=['W-상','W-중','W-하'].filter(id=>id in current.data).map(id=>current.data[id]);
+  const h=['H-좌','H-중','H-우'].filter(id=>id in current.data).map(id=>current.data[id]);
+  if(w.length){ current.w=Math.min(...w); $('#wInput').value=current.w; }
+  if(h.length){ current.h=Math.min(...h); $('#hInput').value=current.h; }
+  const m=[];
+  if(w.length)m.push(`W 최소 ${Math.min(...w)} · 편차 ${Math.max(...w)-Math.min(...w)}mm`);
+  if(h.length)m.push(`H 최소 ${Math.min(...h)} · 편차 ${Math.max(...h)-Math.min(...h)}mm`);
+  if('주벤트-W' in current.data)m.push(`주벤트 ${current.data['주벤트-W']}mm`);
+  $('#sizeMeta').textContent=m.length?m.join('  /  '):'실측 6포인트의 최소값을 자동 제안합니다.';
+}
+$('#wInput').addEventListener('input',e=>current.w=parseInt(e.target.value)||null);
+$('#hInput').addEventListener('input',e=>current.h=parseInt(e.target.value)||null);
+
+document.querySelectorAll('.target').forEach(g=>{ const id=g.dataset.id;
   g.addEventListener('click',()=>{
-    if(id in data){ // 이미 채워진 칸 → 재측정 위해 비우기
-      delete data[id];
-      g.classList.remove('filled');
-      g.querySelector('.val').style.display='none';
-      g.querySelector('.lbl').style.display='';
-      compute();
-    }
+    if(id in current.data){ delete current.data[id]; cells[id].clear(); updateMeasCount(); computeSize(); }
     setActive(id);
   });
 });
-
-/* ---- 초기화 / 시뮬레이션 ---- */
-$('#resetBtn').addEventListener('click',()=>{
-  for(const k in data) delete data[k];
-  Object.values(targets).forEach(g=>{
-    g.classList.remove('filled','active');
-    g.querySelector('.val').style.display='none';
-    g.querySelector('.lbl').style.display='';
-  });
-  activeId=null; compute(); setActive(null);
-  log('초기화');
-});
-$('#simBtn').addEventListener('click',()=>{
-  const base = 1480 + Math.floor(Math.random()*1000);
-  const mm = base + Math.floor(Math.random()*7)-3; // ±3mm 편차 흉내
-  log(`◀ (시뮬) ${mm} mm`);
-  record(mm);
+$('#jubentCell').addEventListener('click',()=>{
+  if('주벤트-W' in current.data){ delete current.data['주벤트-W']; cells['주벤트-W'].clear(); updateMeasCount(); computeSize(); }
+  setActive('주벤트-W');
 });
 
-/* ---- 초기 지원 체크 ---- */
-if(!navigator.bluetooth){
-  $('#notice').style.display='block';
-  connectBtn.disabled=true;
+$('#manualBtn').addEventListener('click',()=>{
+  const id=activeId||nextEmpty(); if(!id){toast('빈 칸이 없어요');return;}
+  const v=prompt(`${labelOf(id)} 측정값 (mm)`,''); if(v===null)return;
+  const mm=parseInt(v); if(isNaN(mm)){toast('숫자를 입력하세요');return;}
+  if(activeId!==id) setActive(id); record(mm);
+});
+$('#simBtn').addEventListener('click',()=>{ record(1480+Math.floor(Math.random()*900)+Math.floor(Math.random()*7)-3); });
+
+/* ===== BLE ===== */
+async function connect(){
+  if(!navigator.bluetooth){ $('#notice').style.display='block'; return; }
+  try{
+    device=await navigator.bluetooth.requestDevice({filters:[{services:[SVC_UUID]}],optionalServices:[SVC_UUID]});
+    device.addEventListener('gattserverdisconnected',()=>setConn(false));
+    const server=await device.gatt.connect();
+    const svc=await server.getPrimaryService(SVC_UUID);
+    characteristic=await svc.getCharacteristic(CHAR_UUID);
+    await characteristic.startNotifications();
+    characteristic.addEventListener('characteristicvaluechanged',e=>{
+      const dv=e.target.value,b=new Uint8Array(dv.buffer);
+      if(PKT_PREFIX.every((x,i)=>b[i]===x)&&b.length>=11) record(Math.round(dv.getFloat32(7,true)*1000));
+      else log('· '+[...b].map(x=>x.toString(16).padStart(2,'0')).join(' '));
+    });
+    await characteristic.writeValueWithResponse(ENABLE_CMD);
+    setConn(true); toast('측정기 연결됨 ✓');
+    if(!activeId && filledCount()<getOrder().length) setActive(nextEmpty());
+  }catch(err){ log('오류: '+err.message); if(err.name!=='NotFoundError') toast('연결 실패'); }
 }
+function setConn(on){ $('#dot').classList.toggle('on',on); $('#connState').textContent=on?'연결됨':'미연결'; $('#connectBtn').textContent=on?'해제':'연결'; }
+$('#connectBtn').addEventListener('click',()=>{ if(device&&device.gatt.connected) device.gatt.disconnect(); else connect(); });
+
+/* ===== 창 저장 / 다음 ===== */
+function renderTray(){
+  const tray=$('#tray'); tray.innerHTML='';
+  windows.forEach((w,i)=>{ const d=document.createElement('div'); d.className='chip-done';
+    d.innerHTML=`<div class="n">창 ${i+1} · ${shapeLabel(w.shape)}</div><div class="p">${w.location||'(이름없음)'}</div><div class="s">${w.w||'—'}×${w.h||'—'}</div>`;
+    tray.appendChild(d); });
+  const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`창 ${windows.length+1} 작업 중`; tray.appendChild(cur);
+  tray.scrollLeft=tray.scrollWidth;
+}
+function resetForm(){
+  current=blankWindow(); activeId=null;
+  const box=$('#photoBox'); const img=box.querySelector('img'); if(img)img.remove();
+  $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has');
+  $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
+  Object.values(cells).forEach(c=>c.clear());
+  $('#wInput').value=''; $('#hInput').value='';
+  $('#sizeMeta').textContent='실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)';
+  selectShape('2W'); selectSide('좌');
+  setActive(null);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('#nextBtn').addEventListener('click',()=>{
+  if(!current.location){ toast('설치 위치를 입력하세요'); return; }
+  if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요'); return; }
+  if(isUnbalanced() && !('주벤트-W' in current.data)){ toast('주벤트 W를 측정하세요'); return; }
+  windows.push(current); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray();
+});
+
+/* ===== 실측 완료 ===== */
+$('#finishBtn').addEventListener('click',()=>{
+  const all=[...windows];
+  if(current.location&&current.w&&current.h) all.push(current);
+  if(all.length===0){ toast('저장된 창이 없어요'); return; }
+  $('#sumLead').textContent=`총 ${all.length}개 창 · ${new Date().toLocaleDateString('ko-KR')}`;
+  const list=$('#sumList'); list.innerHTML='';
+  all.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
+    const jub = ('주벤트-W' in w.data)?` · 주벤트 ${w.data['주벤트-W']}`:'';
+    item.innerHTML=`${w.photo?`<img src="${w.photo}">`:'<div class="noimg">NO IMG</div>'}
+      <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
+      <span>W ${w.w} × H ${w.h} mm${jub}</span></div><div class="num">#${i+1}</div>`;
+    list.appendChild(item); });
+  $('#overlay').classList.add('show');
+});
+$('#closeSheet').addEventListener('click',()=>$('#overlay').classList.remove('show'));
+$('#overlay').addEventListener('click',e=>{ if(e.target===$('#overlay')) $('#overlay').classList.remove('show'); });
+
+/* init */
+if(!navigator.bluetooth) $('#notice').style.display='block';
+selectShape('2W'); selectSide('좌'); updateMeasCount(); renderTray();
 </script>
 </body>
 </html>
