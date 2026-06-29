@@ -37,7 +37,11 @@
   .btn:active{transform:scale(.97)}
   .btn.sm{padding:7px 11px;font-size:12px}
   .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--hair)}
-  .btn:disabled{opacity:.4}
+  .btn.ai{background:var(--laser-deep);color:#fff;width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px}
+  .btn.ai:disabled{opacity:.4}
+  .btn.ai .spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite;display:none}
+  .btn.ai.loading .spin{display:inline-block}
+  @keyframes rot{to{transform:rotate(360deg)}}
 
   .tray{display:flex;gap:7px;overflow-x:auto;padding:10px 2px 4px;scrollbar-width:none}
   .tray::-webkit-scrollbar{display:none}
@@ -52,6 +56,7 @@
   .step-n{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--ink);width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none}
   .step-h h2{font-size:14px;font-weight:600}
   .step-h .opt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .step-h .opt.ai-tag{color:var(--laser-deep)}
 
   .photo-box{position:relative;width:100%;aspect-ratio:4/3;border:1.5px dashed var(--hair);border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
   .photo-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -67,7 +72,6 @@
   .loc-input{width:100%;font-family:var(--sans);font-size:14px;padding:11px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);color:var(--ink)}
   .loc-input:focus{outline:none;border-color:var(--laser-deep)}
 
-  /* shape grid */
   .shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
   .shape-cell{border:1px solid var(--hair);border-radius:11px;background:var(--surface-2);padding:8px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:5px}
   .shape-cell svg{width:100%;height:32px}
@@ -75,9 +79,8 @@
   .shape-cell .si{stroke:var(--ink);stroke-width:1.5;fill:none}
   .shape-cell svg text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
   .shape-cell.sel{background:var(--ink);border-color:var(--ink)}
-  .shape-cell.sel .sl{color:#fff}
-  .shape-cell.sel .si{stroke:#fff}
-  .shape-cell.sel svg text{fill:#fff}
+  .shape-cell.sel .sl{color:#fff}.shape-cell.sel .si{stroke:#fff}.shape-cell.sel svg text{fill:#fff}
+  .shape-cell.ai-pick{border-color:var(--laser-deep);box-shadow:0 0 0 2px rgba(1,146,87,.25)}
 
   .side-row{display:none;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--hair)}
   .side-row.show{display:flex}
@@ -101,8 +104,8 @@
   .frame-glass{fill:rgba(0,199,117,.05)}
   .measure-hint{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
   .measure-hint b{color:var(--laser-deep)}
+  .ratio-tag{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;margin-top:2px}
 
-  /* jubent (unbalanced 7th) */
   .jubent{display:none;margin-top:12px;border-top:1px dashed var(--hair);padding-top:12px}
   .jubent.show{display:block}
   .jubent .jl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:7px}
@@ -126,7 +129,7 @@
   .actionbar .next{flex:1;background:var(--ink);color:#fff;font-size:15px;font-weight:600;padding:15px;border-radius:13px;box-shadow:var(--shadow)}
   .actionbar .finish{flex:none;background:var(--laser-deep);color:#fff;font-size:14px;font-weight:600;padding:15px 16px;border-radius:13px;box-shadow:var(--shadow)}
 
-  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:11px;opacity:0;transition:all .25s;z-index:40;pointer-events:none;white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:11px;opacity:0;transition:all .25s;z-index:40;pointer-events:none;white-space:nowrap;max-width:90vw}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .notice{background:#fff;border:1px solid var(--alert);border-left-width:4px;border-radius:12px;padding:13px 14px;margin-top:12px;display:none}
   .notice b{color:var(--alert);font-size:13px}
@@ -161,21 +164,17 @@
 <div class="top">
   <header>
     <div><div class="eyebrow">KCC글라스 · 현장 실측</div><h1>실측 작업</h1></div>
-    <div class="conn">
-      <div class="dot" id="dot"></div>
-      <div class="ct"><b id="connState">미연결</b>측정기</div>
-      <button class="btn sm" id="connectBtn">연결</button>
-    </div>
+    <div class="conn"><div class="dot" id="dot"></div><div class="ct"><b id="connState">미연결</b>측정기</div><button class="btn sm" id="connectBtn">연결</button></div>
   </header>
   <div class="tray" id="tray"><div class="chip-cur">창 1 작업 중</div></div>
 </div>
 
 <div class="notice" id="notice">
   <b>이 브라우저는 블루투스 미지원</b>
-  <p>측정기 연결은 <code>안드로이드 크롬</code>에서만 돼요. 사진·위치·형태·사이즈는 여기서도 테스트되고, 측정값은 "직접 입력"이나 "시뮬레이션"으로 채울 수 있어요.</p>
+  <p>측정기 연결은 <code>안드로이드 크롬</code>에서만 돼요. 나머지 기능은 여기서도 테스트되고, 측정값은 "직접 입력"·"시뮬레이션"으로 채울 수 있어요.</p>
 </div>
 
-<!-- 1 사진 -->
+<!-- 1 사진 + AI -->
 <div class="card">
   <div class="step-h"><span class="step-n">1</span><h2>창호 사진</h2><span class="opt">탭하면 카메라</span></div>
   <label class="photo-box" id="photoBox">
@@ -186,9 +185,10 @@
     <span class="retake" id="retake" style="display:none">다시 촬영</span>
     <input type="file" id="photoInput" accept="image/*" capture="environment">
   </label>
+  <button class="btn ai" id="aiBtn" disabled><span class="spin"></span><span id="aiBtnText">✨ AI 형태 분석</span></button>
 </div>
 
-<!-- 2 설치 위치 -->
+<!-- 2 위치 -->
 <div class="card">
   <div class="step-h"><span class="step-n">2</span><h2>설치 위치</h2></div>
   <div class="loc-chips" id="locChips"></div>
@@ -201,65 +201,20 @@
   <div class="shape-grid" id="shapeGrid"></div>
   <div class="side-row" id="sideRow">
     <span class="sl" id="sideLabel">핸들 방향</span>
-    <div class="side-toggle">
-      <button id="sideLeft" class="sel">좌</button>
-      <button id="sideRight">우</button>
-    </div>
+    <div class="side-toggle"><button id="sideLeft" class="sel">좌</button><button id="sideRight">우</button></div>
   </div>
 </div>
 
 <!-- 4 실측 -->
 <div class="card">
   <div class="step-h"><span class="step-n">4</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
-  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 도면">
-    <rect class="frame" x="78" y="58" width="184" height="174" rx="3"/>
-    <rect class="frame-glass" x="86" y="66" width="168" height="158"/>
-    <g id="mullions"></g>
-    <g class="target" data-id="W-상" data-axis="W">
-      <line class="seg" x1="78" y1="44" x2="262" y2="44"/><line class="cap" x1="78" y1="38" x2="78" y2="50"/><line class="cap" x1="262" y1="38" x2="262" y2="50"/>
-      <text class="lbl" x="170" y="30" text-anchor="middle">W · 상</text>
-      <text class="val" x="170" y="44" text-anchor="middle" dy="-1" style="display:none"></text>
-      <rect class="hitbox" x="78" y="20" width="184" height="34"/>
-    </g>
-    <g class="target" data-id="W-중" data-axis="W">
-      <line class="seg" x1="98" y1="145" x2="242" y2="145"/><line class="cap" x1="98" y1="139" x2="98" y2="151"/><line class="cap" x1="242" y1="139" x2="242" y2="151"/>
-      <text class="lbl" x="170" y="135" text-anchor="middle" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">W · 중</text>
-      <text class="val" x="170" y="160" text-anchor="middle" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
-      <rect class="hitbox" x="98" y="120" width="144" height="44"/>
-    </g>
-    <g class="target" data-id="W-하" data-axis="W">
-      <line class="seg" x1="78" y1="246" x2="262" y2="246"/><line class="cap" x1="78" y1="240" x2="78" y2="252"/><line class="cap" x1="262" y1="240" x2="262" y2="252"/>
-      <text class="lbl" x="170" y="266" text-anchor="middle">W · 하</text>
-      <text class="val" x="170" y="246" text-anchor="middle" dy="-1" style="display:none"></text>
-      <rect class="hitbox" x="78" y="236" width="184" height="34"/>
-    </g>
-    <g class="target" data-id="H-좌" data-axis="H">
-      <line class="seg" x1="62" y1="58" x2="62" y2="232"/><line class="cap" x1="56" y1="58" x2="68" y2="58"/><line class="cap" x1="56" y1="232" x2="68" y2="232"/>
-      <text class="lbl" x="40" y="148" text-anchor="middle" transform="rotate(-90 40 148)">H · 좌</text>
-      <text class="val" x="62" y="148" text-anchor="middle" transform="rotate(-90 62 148)" style="display:none"></text>
-      <rect class="hitbox" x="24" y="58" width="44" height="174"/>
-    </g>
-    <g class="target" data-id="H-중" data-axis="H">
-      <line class="seg" x1="170" y1="80" x2="170" y2="210"/><line class="cap" x1="164" y1="80" x2="176" y2="80"/><line class="cap" x1="164" y1="210" x2="176" y2="210"/>
-      <text class="lbl" x="186" y="148" text-anchor="middle" transform="rotate(-90 186 148)" style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px">H · 중</text>
-      <text class="val" x="155" y="148" text-anchor="middle" transform="rotate(-90 155 148)" style="display:none;paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"></text>
-      <rect class="hitbox" x="150" y="80" width="40" height="130"/>
-    </g>
-    <g class="target" data-id="H-우" data-axis="H">
-      <line class="seg" x1="278" y1="58" x2="278" y2="232"/><line class="cap" x1="272" y1="58" x2="284" y2="58"/><line class="cap" x1="272" y1="232" x2="284" y2="232"/>
-      <text class="lbl" x="300" y="148" text-anchor="middle" transform="rotate(90 300 148)">H · 우</text>
-      <text class="val" x="278" y="148" text-anchor="middle" transform="rotate(-90 278 148)" style="display:none"></text>
-      <rect class="hitbox" x="272" y="58" width="44" height="174"/>
-    </g>
-  </svg>
+  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 도면"></svg>
   <div class="measure-hint" id="measureHint">칸을 탭하고 측정기 버튼을 누르세요</div>
-
-  <!-- 7th: 주벤트 W (언발란스) -->
+  <div class="ratio-tag" id="ratioTag"></div>
   <div class="jubent" id="jubentRow">
     <div class="jl">7번째 실측 · <b>주벤트 W</b> (언발란스 추가)</div>
     <div class="jubent-cell" id="jubentCell"><span>탭하고 측정</span><span><span class="jv" id="jubentVal">—</span> mm</span></div>
   </div>
-
   <div style="display:flex;gap:8px;margin-top:11px">
     <button class="btn ghost sm" id="manualBtn" style="flex:1">직접 입력</button>
     <button class="btn ghost sm" id="simBtn" style="flex:1">시뮬레이션</button>
@@ -286,74 +241,132 @@
 <div class="toast" id="toast"></div>
 
 <div class="overlay" id="overlay"><div class="sheet">
-  <h3>실측 완료</h3>
-  <div class="lead" id="sumLead"></div>
-  <div id="sumList"></div>
+  <h3>실측 완료</h3><div class="lead" id="sumLead"></div><div id="sumList"></div>
   <button class="btn close" id="closeSheet">닫기</button>
 </div></div>
 
 <script>
+/* ===================================================================
+   AI 형태 분석 프록시 주소 — 여기에 본인 Apps Script 웹앱 URL을 넣으세요.
+   비워두면 AI 버튼은 "프록시 설정 필요" 안내만 합니다.
+=================================================================== */
+const AI_PROXY_URL = '';
+
 /* ===== Bosch GLM 50-27 CG BLE ===== */
 const SVC_UUID='02a6c0d0-0451-4000-b000-fb3210111989';
 const CHAR_UUID='02a6c0d1-0451-4000-b000-fb3210111989';
 const ENABLE_CMD=new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]);
 const PKT_PREFIX=[0xc0,0x55,0x10,0x06];
-const SVGNS='http://www.w3.org/2000/svg';
 const LOCATIONS=['거실창','안방창','작은방창','주방창','베란다창','욕실창'];
 
-/* 창 형태 정의 */
 const SHAPES=[
   {id:'2W',label:'2W'},{id:'2W12',label:'2W(1:2)'},{id:'2WU',label:'2WU'},{id:'3W',label:'3W'},
   {id:'3WU',label:'3WU'},{id:'4W',label:'4W'},{id:'FIX',label:'FIX'},{id:'TD',label:'T/D'}
 ];
 const SHAPE_DEFS={
-  '2W':{div:[0.5]},
-  '2W12':{div:[1/3],lab:['1','2']},
-  '2WU':{unbalanced:true,side:true},
-  '3W':{div:[0.25,0.75],lab:['1','2','1']},
-  '3WU':{unbalanced:true,triple:true},
-  '4W':{div:[0.25,0.5,0.75]},
-  'FIX':{fix:true},
-  'TD':{handle:true,side:true}
+  '2W':{div:[0.5]},'2W12':{div:[1/3],lab:['1','2']},'2WU':{unbalanced:true,side:true},
+  '3W':{div:[0.25,0.75],lab:['1','2','1']},'3WU':{unbalanced:true,triple:true},
+  '4W':{div:[0.25,0.5,0.75]},'FIX':{fix:true},'TD':{handle:true,side:true}
 };
 function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id; }
 
-let device=null, characteristic=null;
-let windows=[];
-let current=blankWindow();
-let activeId=null;
+let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null}; }
-
 const $=s=>document.querySelector(s);
-
-/* ===== 측정 셀 추상화 (SVG 6칸 + 주벤트 HTML 1칸) ===== */
-const cells={};
-document.querySelectorAll('.target').forEach(g=>{
-  cells[g.dataset.id]={
-    setActive(on){ g.classList.toggle('active',on); },
-    setVal(mm){ g.classList.add('filled');g.classList.remove('active');
-      g.querySelector('.val').textContent=mm;g.querySelector('.val').style.display='';g.querySelector('.lbl').style.display='none'; },
-    clear(){ g.classList.remove('filled','active');
-      g.querySelector('.val').style.display='none';g.querySelector('.lbl').style.display=''; }
-  };
-});
-(function(){
-  const row=$('#jubentCell'), val=$('#jubentVal');
-  cells['주벤트-W']={
-    setActive(on){ row.classList.toggle('active-cell',on); },
-    setVal(mm){ row.classList.add('filled-cell');row.classList.remove('active-cell');val.textContent=mm; },
-    clear(){ row.classList.remove('filled-cell','active-cell');val.textContent='—'; }
-  };
-})();
-
-/* ===== 측정 순서 (언발란스면 주벤트 추가) ===== */
-function isUnbalanced(){ return !!(SHAPE_DEFS[current.shape]||{}).unbalanced; }
-function getOrder(){ const b=['W-상','W-중','W-하','H-좌','H-중','H-우']; if(isUnbalanced()) b.push('주벤트-W'); return b; }
 
 /* ---- toast / log ---- */
 let toastT;
-function toast(m){ const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+function toast(m){ const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 function log(m){ const p=$('#logPre');const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});p.textContent+=`${t}  ${m}\n`;p.parentElement.scrollTop=p.parentElement.scrollHeight; }
+
+/* ===== 측정 순서 ===== */
+function isUnbalanced(){ return !!(SHAPE_DEFS[current.shape]||{}).unbalanced; }
+function getOrder(){ const b=['W-상','W-중','W-하','H-좌','H-중','H-우']; if(isUnbalanced()) b.push('주벤트-W'); return b; }
+function nextEmpty(){ return getOrder().find(id=>!(id in current.data))||null; }
+function filledCount(){ return getOrder().filter(id=>id in current.data).length; }
+function labelOf(id){ return id==='주벤트-W'?'주벤트 W':id.replace('-',' '); }
+
+/* ===================================================================
+   도면 동적 렌더링 — 실측 W:H 비율로 틀을 그림
+=================================================================== */
+function renderDiagram(){
+  const cx=170, cy=145, maxW=178, maxH=164;
+  let fw,fh;
+  if(current.w&&current.h){ const s=Math.min(maxW/current.w, maxH/current.h); fw=current.w*s; fh=current.h*s; }
+  else { fw=172; fh=156; }
+  fw=Math.max(fw,64); fh=Math.max(fh,64);
+  const fx=cx-fw/2, fy=cy-fh/2;
+  let s='';
+  s+=`<rect class="frame" x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="3"/>`;
+  s+=`<rect class="frame-glass" x="${fx+6}" y="${fy+6}" width="${fw-12}" height="${fh-12}"/>`;
+  s+=shapeMullions(fx,fy,fw,fh);
+  const T=[
+    {id:'W-상',o:'h',ax:fy-15,a:fx,b:fx+fw,lx:cx,ly:fy-27,ins:false},
+    {id:'W-중',o:'h',ax:cy,a:fx+13,b:fx+fw-13,lx:cx,ly:cy-6,ins:true},
+    {id:'W-하',o:'h',ax:fy+fh+15,a:fx,b:fx+fw,lx:cx,ly:fy+fh+29,ins:false},
+    {id:'H-좌',o:'v',ax:fx-15,a:fy,b:fy+fh,lx:fx-28,ly:cy,ins:false},
+    {id:'H-중',o:'v',ax:cx,a:fy+13,b:fy+fh-13,lx:cx-12,ly:cy,ins:true},
+    {id:'H-우',o:'v',ax:fx+fw+15,a:fy,b:fy+fh,lx:fx+fw+28,ly:cy,ins:false}
+  ];
+  for(const t of T) s+=targetSVG(t);
+  $('#diagram').innerHTML=s;
+}
+function targetSVG(t){
+  const id=t.id, filled=(id in current.data), active=(activeId===id);
+  const cls='target'+(filled?' filled':'')+(active?' active':'');
+  const cap=6; let seg,caps,hit,rot='';
+  if(t.o==='h'){
+    seg=`<line class="seg" x1="${t.a}" y1="${t.ax}" x2="${t.b}" y2="${t.ax}"/>`;
+    caps=`<line class="cap" x1="${t.a}" y1="${t.ax-cap}" x2="${t.a}" y2="${t.ax+cap}"/><line class="cap" x1="${t.b}" y1="${t.ax-cap}" x2="${t.b}" y2="${t.ax+cap}"/>`;
+    hit=`<rect class="hitbox" data-id="${id}" x="${t.a}" y="${t.ax-16}" width="${t.b-t.a}" height="32"/>`;
+  } else {
+    seg=`<line class="seg" x1="${t.ax}" y1="${t.a}" x2="${t.ax}" y2="${t.b}"/>`;
+    caps=`<line class="cap" x1="${t.ax-cap}" y1="${t.a}" x2="${t.ax+cap}" y2="${t.a}"/><line class="cap" x1="${t.ax-cap}" y1="${t.b}" x2="${t.ax+cap}" y2="${t.b}"/>`;
+    hit=`<rect class="hitbox" data-id="${id}" x="${t.ax-16}" y="${t.a}" width="32" height="${t.b-t.a}"/>`;
+    rot=`transform="rotate(-90 ${t.lx} ${t.ly})"`;
+  }
+  const bg=t.ins?'style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"':'';
+  const txt = filled
+    ? `<text class="val" x="${t.lx}" y="${t.ly}" text-anchor="middle" ${rot} ${bg}>${current.data[id]}</text>`
+    : `<text class="lbl" x="${t.lx}" y="${t.ly}" text-anchor="middle" ${rot} ${bg}>${id.replace('-',' · ')}</text>`;
+  return `<g class="${cls}">${seg}${caps}${txt}${hit}</g>`;
+}
+function shapeMullions(fx,fy,fw,fh){
+  const def=SHAPE_DEFS[current.shape]||{};
+  const yT=fy+4, yB=fy+fh-4, ym=fy+fh/2, x0=fx, W=fw;
+  const vline=x=>`<line x1="${x}" y1="${yT}" x2="${x}" y2="${yB}" stroke="#15181B" stroke-width="2"/>`;
+  const txt=(x,y,str,col,size)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="${size}" fill="${col}">${str}</text>`;
+  if(def.fix) return txt(fx+fw/2, ym+7,'F','#15181B',22);
+  if(def.handle){
+    const side=current.side||'좌';
+    const apexX=side==='좌'?fx+fw:fx, baseX=side==='좌'?fx:fx+fw;
+    let s=`<polyline points="${baseX},${yT} ${apexX},${ym} ${baseX},${yB}" fill="none" stroke="#15181B" stroke-width="1.6"/>`;
+    const hx=side==='좌'?fx+18:fx+fw-18, dir=side==='좌'?-1:1, tip=hx+dir*14;
+    s+=`<line x1="${hx}" y1="${ym}" x2="${tip}" y2="${ym}" stroke="#019257" stroke-width="2.2"/>`;
+    s+=`<polyline points="${tip-dir*6},${ym-4} ${tip},${ym} ${tip-dir*6},${ym+4}" fill="none" stroke="#019257" stroke-width="2.2"/>`;
+    return s;
+  }
+  if(def.unbalanced){
+    const side=current.side||'좌';
+    if(def.triple) return vline(x0+W*0.2)+vline(x0+W*0.5)+vline(x0+W*0.8)+txt(x0+W*0.1,fy+17,'주','#019257',10)+txt(x0+W*0.9,fy+17,'주','#019257',10);
+    if(side==='좌') return vline(x0+W*0.3)+txt(x0+W*0.15,fy+17,'주','#019257',10);
+    return vline(x0+W*0.7)+txt(x0+W*0.85,fy+17,'주','#019257',10);
+  }
+  let s=''; (def.div||[]).forEach(r=>s+=vline(x0+W*r));
+  if(def.lab){ const e=[0,...def.div,1]; for(let i=0;i<def.lab.length;i++) s+=txt(x0+W*((e[i]+e[i+1])/2), ym+4, def.lab[i],'#6B7177',12); }
+  return s;
+}
+
+/* ---- jubent / counts / refresh ---- */
+function updateJubentView(){
+  const row=$('#jubentCell'), val=$('#jubentVal'), has='주벤트-W' in current.data;
+  row.classList.toggle('active-cell', activeId==='주벤트-W');
+  row.classList.toggle('filled-cell', has);
+  val.textContent = has?current.data['주벤트-W']:'—';
+}
+function updateMeasCount(){ $('#measOpt').textContent=`${filledCount()} / ${getOrder().length}`; }
+function updateRatioTag(){ $('#ratioTag').textContent = (current.w&&current.h)?`도면 비율 적용 · ${current.w} : ${current.h}`:''; }
+function refresh(){ renderDiagram(); updateJubentView(); updateMeasCount(); updateRatioTag(); }
 
 /* ===== 1 사진 ===== */
 $('#photoInput').addEventListener('change',e=>{
@@ -361,9 +374,30 @@ $('#photoInput').addEventListener('change',e=>{
   const r=new FileReader();
   r.onload=()=>{ current.photo=r.result; const box=$('#photoBox');
     let img=box.querySelector('img'); if(!img){img=document.createElement('img');box.prepend(img);} img.src=r.result;
-    $('#photoPlaceholder').style.display='none'; $('#retake').style.display=''; box.classList.add('has'); };
+    $('#photoPlaceholder').style.display='none'; $('#retake').style.display=''; box.classList.add('has');
+    $('#aiBtn').disabled=false; };
   r.readAsDataURL(f);
 });
+
+/* ===== AI 형태 분석 ===== */
+async function analyzeShape(){
+  if(!current.photo){ toast('먼저 사진을 촬영하세요'); return; }
+  if(!AI_PROXY_URL){ toast('AI 프록시 URL을 코드 상단에 설정하세요'); return; }
+  const btn=$('#aiBtn'); btn.classList.add('loading'); btn.disabled=true; $('#aiBtnText').textContent='분석 중…';
+  try{
+    const b64=current.photo.split(',')[1];
+    const res=await fetch(AI_PROXY_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({image:b64})});
+    const j=await res.json();
+    if(j.shape && SHAPE_DEFS[j.shape]){
+      selectShape(j.shape);
+      if(j.side==='좌'||j.side==='우') selectSide(j.side);
+      const cell=document.querySelector(`.shape-cell[data-id="${j.shape}"]`); if(cell) cell.classList.add('ai-pick');
+      toast(`AI 추천: ${shapeLabel(j.shape)}${(SHAPE_DEFS[j.shape].side&&j.side)?' · '+j.side:''} (확신 ${j.confidence||'-'}) — 확인해주세요`);
+    } else { toast('형태 인식 실패 — 직접 선택해주세요'); }
+  }catch(err){ log('AI 오류: '+err.message); toast('AI 분석 오류 — 직접 선택해주세요'); }
+  finally{ btn.classList.remove('loading'); btn.disabled=false; $('#aiBtnText').textContent='✨ AI 형태 분석'; }
+}
+$('#aiBtn').addEventListener('click',analyzeShape);
 
 /* ===== 2 위치 ===== */
 const chipsWrap=$('#locChips');
@@ -376,7 +410,7 @@ LOCATIONS.forEach(name=>{
 $('#locInput').addEventListener('input',e=>{ current.location=e.target.value.trim();
   document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); });
 
-/* ===== 3 창 형태 ===== */
+/* ===== 3 형태 ===== */
 function shapeIcon(id){
   const R='<rect class="si" x="6" y="6" width="48" height="28"/>';
   const v=x=>`<line class="si" x1="${x}" y1="6" x2="${x}" y2="34"/>`;
@@ -401,77 +435,36 @@ SHAPES.forEach(s=>{
 });
 function selectShape(id){
   current.shape=id;
-  document.querySelectorAll('.shape-cell').forEach(x=>x.classList.toggle('sel',x.dataset.id===id));
+  document.querySelectorAll('.shape-cell').forEach(x=>{ x.classList.toggle('sel',x.dataset.id===id); x.classList.remove('ai-pick'); });
   $('#shapeOpt').textContent=shapeLabel(id);
   const def=SHAPE_DEFS[id]||{};
-  // 좌/우 토글 표시
   const sideRow=$('#sideRow');
-  if(def.side){ sideRow.classList.add('show'); $('#sideLabel').textContent = def.handle?'핸들 방향':'주벤트 방향'; }
+  if(def.side){ sideRow.classList.add('show'); $('#sideLabel').textContent=def.handle?'핸들 방향':'주벤트 방향'; }
   else sideRow.classList.remove('show');
-  // 주벤트 7번째 칸
-  const jr=$('#jubentRow');
-  if(def.unbalanced && !def.triple){ jr.classList.add('show'); }
-  else if(def.unbalanced && def.triple){ jr.classList.add('show'); } // 3WU도 주벤트 측정
-  else { jr.classList.remove('show'); if('주벤트-W' in current.data){ delete current.data['주벤트-W']; cells['주벤트-W'].clear(); } }
-  renderShapeDiagram(); updateMeasCount();
-  if(activeId==='주벤트-W' && !isUnbalanced()){ setActive(nextEmpty()); }
+  if(def.unbalanced) $('#jubentRow').classList.add('show');
+  else { $('#jubentRow').classList.remove('show'); if('주벤트-W' in current.data) delete current.data['주벤트-W']; }
+  if(activeId==='주벤트-W' && !def.unbalanced) activeId=nextEmpty();
+  refresh();
 }
-function selectSide(s){
-  current.side=s;
-  $('#sideLeft').classList.toggle('sel',s==='좌');
-  $('#sideRight').classList.toggle('sel',s==='우');
-  renderShapeDiagram();
-}
+function selectSide(s){ current.side=s; $('#sideLeft').classList.toggle('sel',s==='좌'); $('#sideRight').classList.toggle('sel',s==='우'); refresh(); }
 $('#sideLeft').addEventListener('click',()=>selectSide('좌'));
 $('#sideRight').addEventListener('click',()=>selectSide('우'));
 
-/* 형태 도면 (가운데 분할/대각선) */
-function md(tag,a){ const e=document.createElementNS(SVGNS,tag); for(const k in a)e.setAttribute(k,a[k]); return e; }
-function renderShapeDiagram(){
-  const g=$('#mullions'); g.innerHTML='';
-  const def=SHAPE_DEFS[current.shape]||{};
-  const x0=78,W=184,yT=64,yB=226,ym=145;
-  const vline=x=>g.appendChild(md('line',{x1:x,y1:yT,x2:x,y2:yB,stroke:'#15181B','stroke-width':2}));
-  const txt=(x,s,small)=>{ const t=md('text',{x,y:small?80:148,'text-anchor':'middle','font-family':"'IBM Plex Mono',monospace",'font-size':small?10:12,fill:small?'#019257':'#6B7177'}); t.textContent=s; g.appendChild(t); };
-  if(def.fix){ const t=md('text',{x:170,y:150,'text-anchor':'middle','font-family':"'IBM Plex Mono',monospace",'font-size':22,fill:'#15181B'});t.textContent='F';g.appendChild(t); return; }
-  if(def.handle){
-    const side=current.side||'좌';
-    const apexX=side==='좌'?262:78, baseX=side==='좌'?78:262;
-    g.appendChild(md('polyline',{points:`${baseX},${yT} ${apexX},${ym} ${baseX},${yB}`,fill:'none',stroke:'#15181B','stroke-width':1.6}));
-    const hx=side==='좌'?96:244, dir=side==='좌'?-1:1, tip=hx+dir*14;
-    g.appendChild(md('line',{x1:hx,y1:ym,x2:tip,y2:ym,stroke:'#019257','stroke-width':2.2}));
-    g.appendChild(md('polyline',{points:`${tip-dir*6},${ym-4} ${tip},${ym} ${tip-dir*6},${ym+4}`,fill:'none',stroke:'#019257','stroke-width':2.2}));
-    return;
-  }
-  if(def.unbalanced){
-    const side=current.side||'좌';
-    if(def.triple){ vline(x0+W*0.2);vline(x0+W*0.5);vline(x0+W*0.8); txt(x0+W*0.1,'주',true);txt(x0+W*0.9,'주',true); }
-    else if(side==='좌'){ vline(x0+W*0.3); txt(x0+W*0.15,'주',true); }
-    else { vline(x0+W*0.7); txt(x0+W*0.85,'주',true); }
-    return;
-  }
-  (def.div||[]).forEach(r=>vline(x0+W*r));
-  if(def.lab){ const e=[0,...def.div,1]; for(let i=0;i<def.lab.length;i++){ txt(x0+W*((e[i]+e[i+1])/2),def.lab[i]); } }
-}
-
 /* ===== 4 측정 ===== */
-function nextEmpty(){ return getOrder().find(id=>!(id in current.data))||null; }
-function filledCount(){ return getOrder().filter(id=>id in current.data).length; }
-function updateMeasCount(){ $('#measOpt').textContent=`${filledCount()} / ${getOrder().length}`; }
-function labelOf(id){ return id==='주벤트-W'?'주벤트 W':id; }
-
 function setActive(id){
-  if(activeId && cells[activeId]) cells[activeId].setActive(false);
   activeId=id;
-  if(id){ cells[id].setActive(true); $('#measureHint').innerHTML=`<b>${labelOf(id)}</b> 측정 대기 — 버튼을 누르세요`; }
+  if(id) $('#measureHint').innerHTML=`<b>${labelOf(id)}</b> 측정 대기 — 버튼을 누르세요`;
   else $('#measureHint').textContent = filledCount()===getOrder().length?'실측 완료 ✓':'칸을 탭하고 측정하세요';
+  refresh();
 }
 function record(mm){
-  if(!activeId){ const n=nextEmpty(); if(!n){toast('실측이 모두 찼어요');return;} setActive(n); }
-  current.data[activeId]=mm; cells[activeId].setVal(mm); log(`${labelOf(activeId)} = ${mm} mm`);
-  activeId=null; updateMeasCount();
-  const n=nextEmpty(); if(n) setActive(n); else setActive(null);
-  computeSize();
+  if(!activeId){ const n=nextEmpty(); if(!n){toast('실측이 모두 찼어요');return;} activeId=n; }
+  current.data[activeId]=mm; log(`${labelOf(activeId)} = ${mm} mm`);
+  activeId=null; computeSize();
+  const n=nextEmpty(); activeId=n;
+  if(n) $('#measureHint').innerHTML=`<b>${labelOf(n)}</b> 측정 대기 — 버튼을 누르세요`;
+  else $('#measureHint').textContent='실측 완료 ✓';
+  refresh();
 }
 function computeSize(){
   const w=['W-상','W-중','W-하'].filter(id=>id in current.data).map(id=>current.data[id]);
@@ -484,27 +477,26 @@ function computeSize(){
   if('주벤트-W' in current.data)m.push(`주벤트 ${current.data['주벤트-W']}mm`);
   $('#sizeMeta').textContent=m.length?m.join('  /  '):'실측 6포인트의 최소값을 자동 제안합니다.';
 }
-$('#wInput').addEventListener('input',e=>current.w=parseInt(e.target.value)||null);
-$('#hInput').addEventListener('input',e=>current.h=parseInt(e.target.value)||null);
+$('#wInput').addEventListener('input',e=>{ current.w=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); });
+$('#hInput').addEventListener('input',e=>{ current.h=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); });
 
-document.querySelectorAll('.target').forEach(g=>{ const id=g.dataset.id;
-  g.addEventListener('click',()=>{
-    if(id in current.data){ delete current.data[id]; cells[id].clear(); updateMeasCount(); computeSize(); }
-    setActive(id);
-  });
+$('#diagram').addEventListener('click',e=>{
+  const hb=e.target.closest('[data-id]'); if(!hb)return;
+  const id=hb.dataset.id;
+  if(id in current.data){ delete current.data[id]; computeSize(); }
+  setActive(id);
 });
 $('#jubentCell').addEventListener('click',()=>{
-  if('주벤트-W' in current.data){ delete current.data['주벤트-W']; cells['주벤트-W'].clear(); updateMeasCount(); computeSize(); }
+  if('주벤트-W' in current.data){ delete current.data['주벤트-W']; computeSize(); }
   setActive('주벤트-W');
 });
-
 $('#manualBtn').addEventListener('click',()=>{
   const id=activeId||nextEmpty(); if(!id){toast('빈 칸이 없어요');return;}
   const v=prompt(`${labelOf(id)} 측정값 (mm)`,''); if(v===null)return;
   const mm=parseInt(v); if(isNaN(mm)){toast('숫자를 입력하세요');return;}
-  if(activeId!==id) setActive(id); record(mm);
+  activeId=id; record(mm);
 });
-$('#simBtn').addEventListener('click',()=>{ record(1480+Math.floor(Math.random()*900)+Math.floor(Math.random()*7)-3); });
+$('#simBtn').addEventListener('click',()=>record(1480+Math.floor(Math.random()*900)+Math.floor(Math.random()*7)-3));
 
 /* ===== BLE ===== */
 async function connect(){
@@ -529,7 +521,7 @@ async function connect(){
 function setConn(on){ $('#dot').classList.toggle('on',on); $('#connState').textContent=on?'연결됨':'미연결'; $('#connectBtn').textContent=on?'해제':'연결'; }
 $('#connectBtn').addEventListener('click',()=>{ if(device&&device.gatt.connected) device.gatt.disconnect(); else connect(); });
 
-/* ===== 창 저장 / 다음 ===== */
+/* ===== 저장 / 다음 / 완료 ===== */
 function renderTray(){
   const tray=$('#tray'); tray.innerHTML='';
   windows.forEach((w,i)=>{ const d=document.createElement('div'); d.className='chip-done';
@@ -541,13 +533,11 @@ function renderTray(){
 function resetForm(){
   current=blankWindow(); activeId=null;
   const box=$('#photoBox'); const img=box.querySelector('img'); if(img)img.remove();
-  $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has');
+  $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has'); $('#aiBtn').disabled=true;
   $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
-  Object.values(cells).forEach(c=>c.clear());
   $('#wInput').value=''; $('#hInput').value='';
   $('#sizeMeta').textContent='실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)';
-  selectShape('2W'); selectSide('좌');
-  setActive(null);
+  selectShape('2W'); selectSide('좌'); setActive(null);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 $('#nextBtn').addEventListener('click',()=>{
@@ -556,16 +546,13 @@ $('#nextBtn').addEventListener('click',()=>{
   if(isUnbalanced() && !('주벤트-W' in current.data)){ toast('주벤트 W를 측정하세요'); return; }
   windows.push(current); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray();
 });
-
-/* ===== 실측 완료 ===== */
 $('#finishBtn').addEventListener('click',()=>{
-  const all=[...windows];
-  if(current.location&&current.w&&current.h) all.push(current);
+  const all=[...windows]; if(current.location&&current.w&&current.h) all.push(current);
   if(all.length===0){ toast('저장된 창이 없어요'); return; }
   $('#sumLead').textContent=`총 ${all.length}개 창 · ${new Date().toLocaleDateString('ko-KR')}`;
   const list=$('#sumList'); list.innerHTML='';
   all.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
-    const jub = ('주벤트-W' in w.data)?` · 주벤트 ${w.data['주벤트-W']}`:'';
+    const jub=('주벤트-W' in w.data)?` · 주벤트 ${w.data['주벤트-W']}`:'';
     item.innerHTML=`${w.photo?`<img src="${w.photo}">`:'<div class="noimg">NO IMG</div>'}
       <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
       <span>W ${w.w} × H ${w.h} mm${jub}</span></div><div class="num">#${i+1}</div>`;
@@ -577,7 +564,7 @@ $('#overlay').addEventListener('click',e=>{ if(e.target===$('#overlay')) $('#ove
 
 /* init */
 if(!navigator.bluetooth) $('#notice').style.display='block';
-selectShape('2W'); selectSide('좌'); updateMeasCount(); renderTray();
+selectShape('2W'); selectSide('좌'); setActive(null); renderTray();
 </script>
 </body>
 </html>
