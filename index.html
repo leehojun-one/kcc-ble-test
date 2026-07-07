@@ -41,6 +41,48 @@
   .load-item .li-main b{font-size:14px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .load-item .li-main span{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px}
   .load-item .li-del{background:transparent;border:1px solid var(--hair);color:var(--alert);font-size:12px;font-weight:600;padding:7px 11px;border-radius:8px;flex:none}
+
+  .spec-sub{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 0 8px}
+  .spec-sub:not(:first-child){margin-top:15px}
+  .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .spec-card{text-align:left;border:1px solid var(--hair);border-radius:11px;background:var(--surface-2);padding:11px 12px;display:flex;flex-direction:column;gap:2px}
+  .spec-card b{font-size:13px;font-weight:600;color:var(--ink)}
+  .spec-card span{font-family:var(--mono);font-size:10px;color:var(--muted)}
+  .spec-card.sel{background:var(--ink);border-color:var(--ink)}
+  .spec-card.sel b{color:#fff}.spec-card.sel span{color:#B9C0C0}
+  .spec-chips{display:flex;flex-wrap:wrap;gap:7px}
+  .spec-chip{font-size:13px;padding:8px 13px;border-radius:9px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink);font-weight:500}
+  .spec-chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .spec-chip.opt.sel{background:var(--laser-deep);border-color:var(--laser-deep)}
+
+  /* 탭 바 */
+  .tabbar{display:flex;gap:6px;padding:8px 2px 2px}
+  .tabbar button{flex:1;font-family:var(--sans);font-size:14px;font-weight:600;padding:11px;border-radius:11px;border:1px solid var(--hair);background:var(--surface);color:var(--muted);box-shadow:var(--shadow)}
+  .tabbar button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tabbar button .cnt{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
+
+  /* 상담 카드 */
+  .c-empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 20px;line-height:1.6}
+  .c-card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;box-shadow:var(--shadow);margin-top:10px;overflow:hidden}
+  .c-card.open{border-color:var(--laser-deep)}
+  .c-head{display:flex;align-items:center;gap:11px;padding:13px;cursor:pointer}
+  .c-icon{width:44px;height:30px;flex:none}.c-icon svg{width:100%;height:100%}
+  .c-icon .si{stroke:var(--ink);stroke-width:1.5;fill:none}.c-icon text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+  .c-info{flex:1;min-width:0}.c-info b{font-size:14px;font-weight:600;display:block}
+  .c-info span{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .c-chev{font-size:13px;color:var(--muted);flex:none}
+  .c-body{padding:0 13px 14px;border-top:1px dashed var(--hair);margin-top:0}
+  .c-sub{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+  .mini-shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .mini-shape{border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .mini-shape svg{width:100%;height:26px}
+  .mini-shape .si{stroke:var(--ink);stroke-width:1.5;fill:none}.mini-shape svg text{font-family:var(--mono);font-size:9px;fill:var(--muted)}
+  .mini-shape span{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--ink)}
+  .mini-shape.sel{background:var(--ink);border-color:var(--ink)}
+  .mini-shape.sel span{color:#fff}.mini-shape.sel .si{stroke:#fff}.mini-shape.sel svg text{fill:#fff}
+  .c-body .side-toggle{display:flex;gap:6px}
+  .c-body .side-toggle button{font-size:13px;padding:7px 18px;border-radius:9px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink);font-weight:600}
+  .c-body .side-toggle button.sel{background:var(--laser-deep);color:#fff;border-color:var(--laser-deep)}
   button{font-family:var(--sans);cursor:pointer;border:none}
   .btn{background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:9px 13px;border-radius:10px;white-space:nowrap;transition:transform .08s}
   .btn:active{transform:scale(.97)}
@@ -113,6 +155,8 @@
   .frame-glass{fill:rgba(0,199,117,.05)}
   .measure-hint{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
   .measure-hint b{color:var(--laser-deep)}
+  .mbox-active{animation:blink 1s steps(2,start) infinite}
+  #diagram rect[data-id]{cursor:pointer}
   .ratio-tag{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;margin-top:2px}
 
   .jubent{display:none;margin-top:12px;border-top:1px dashed var(--hair);padding-top:12px}
@@ -180,7 +224,13 @@
     <button class="btn sm ghost" id="loadBtn">📂 불러오기</button>
   </div>
   <div class="tray" id="tray"><div class="chip-cur">창 1 작업 중</div></div>
+  <div class="tabbar">
+    <button id="tabMeasure" class="sel">📐 실측</button>
+    <button id="tabConsult">💬 상담<span class="cnt" id="tabConsultCnt"></span></button>
+  </div>
 </div>
+
+<div id="measureTab">
 
 <div class="notice" id="notice">
   <b>이 브라우저는 블루투스 미지원</b>
@@ -221,13 +271,9 @@
 <!-- 4 실측 -->
 <div class="card">
   <div class="step-h"><span class="step-n">4</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
-  <svg class="diagram" id="diagram" viewBox="0 0 340 290" role="img" aria-label="창호 실측 도면"></svg>
+  <svg class="diagram" id="diagram" viewBox="0 0 360 300" role="img" aria-label="창호 실측 도면"></svg>
   <div class="measure-hint" id="measureHint">칸을 탭하고 측정기 버튼을 누르세요</div>
   <div class="ratio-tag" id="ratioTag"></div>
-  <div class="jubent" id="jubentRow">
-    <div class="jl">7번째 실측 · <b>주벤트 W</b> (언발란스 추가)</div>
-    <div class="jubent-cell" id="jubentCell"><span>탭하고 측정</span><span><span class="jv" id="jubentVal">—</span> mm</span></div>
-  </div>
   <div style="display:flex;gap:8px;margin-top:11px">
     <button class="btn ghost sm" id="manualBtn" style="flex:1">직접 입력</button>
     <button class="btn ghost sm" id="simBtn" style="flex:1">시뮬레이션</button>
@@ -240,15 +286,26 @@
   <div class="size-row">
     <div class="size-field"><label>넓이 W</label><div class="inwrap"><input id="wInput" type="number" inputmode="numeric" placeholder="—"><span class="u">mm</span></div></div>
     <div class="size-field"><label>높이 H</label><div class="inwrap"><input id="hInput" type="number" inputmode="numeric" placeholder="—"><span class="u">mm</span></div></div>
+    <div class="size-field" id="vField" style="display:none"><label>벤트 V</label><div class="inwrap"><input id="vInput" type="number" inputmode="numeric" placeholder="—"><span class="u">mm</span></div></div>
   </div>
   <div class="size-meta" id="sizeMeta">실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)</div>
 </div>
 
+</div><!-- /measureTab -->
+
+<div id="consultTab" style="display:none">
+  <div id="consultList"></div>
+</div>
+
 <details class="log"><summary>수신 로그 (디버그)</summary><div class="logbody"><pre id="logPre"></pre></div></details>
 
-<div class="actionbar"><div class="inner">
+<div class="actionbar"><div class="inner" id="measBar">
   <button class="next" id="nextBtn">이 창 저장하고 다음 창 →</button>
-  <button class="finish" id="finishBtn">실측 완료</button>
+  <button class="finish" id="finishBtn">실측 완료 →</button>
+</div>
+<div class="inner" id="consultBar" style="display:none">
+  <button class="next" id="backBtn" style="background:transparent;color:var(--ink);border:1px solid var(--hair)">◀ 실측</button>
+  <button class="finish" id="saveBtn">저장 완료</button>
 </div></div>
 
 <div class="toast" id="toast"></div>
@@ -278,6 +335,16 @@ const ENABLE_CMD=new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]);
 const PKT_PREFIX=[0xc0,0x55,0x10,0x06];
 const LOCATIONS=['거실창','안방창','작은방창','주방창','베란다창','욕실창'];
 
+/* ── 유리·옵션 목록 (실제 KCC 사양으로 여기만 바꾸면 됩니다) ── */
+const GLASS=[
+  {id:'일반복층22',label:'일반 복층 22mm',desc:'5+12+5 표준'},
+  {id:'로이복층24',label:'로이 복층 24mm',desc:'에너지절약'},
+  {id:'로이삼중26',label:'로이 삼중 26mm',desc:'단열 최고급'},
+  {id:'배강도복층',label:'배강도 복층',desc:'안전 강화'}
+];
+const COLORS=['화이트','그레이','블랙','우드체리','우드오크','브론즈'];
+const OPTIONS=['방충망','촘촘방충망','안전바','미들바','시스템핸들','자동잠금'];
+
 const SHAPES=[
   {id:'2W',label:'2W'},{id:'2W12',label:'2W(1:2)'},{id:'2WU',label:'2WU'},{id:'3W',label:'3W'},
   {id:'3WU',label:'3WU'},{id:'4W',label:'4W'},{id:'FIX',label:'FIX'},{id:'TD',label:'T/D'}
@@ -291,7 +358,7 @@ function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id;
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 let siteName='', sessionId=null;
-function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null}; }
+function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[]}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -319,55 +386,54 @@ function log(m){ const p=$('#logPre');const t=new Date().toLocaleTimeString('ko-
 
 /* ===== 측정 순서 ===== */
 function isUnbalanced(){ return !!(SHAPE_DEFS[current.shape]||{}).unbalanced; }
-function getOrder(){ const b=['W-상','W-중','W-하','H-좌','H-중','H-우']; if(isUnbalanced()) b.push('주벤트-W'); return b; }
+function getOrder(){ const b=['W1','W2','W3','H1','H2','H3']; if(isUnbalanced()) b.push('V'); return b; }
 function nextEmpty(){ return getOrder().find(id=>!(id in current.data))||null; }
 function filledCount(){ return getOrder().filter(id=>id in current.data).length; }
-function labelOf(id){ return id==='주벤트-W'?'주벤트 W':id.replace('-',' '); }
+function labelOf(id){ return id==='V'?'벤트 V':id; }
 
 /* ===================================================================
-   도면 동적 렌더링 — 실측 W:H 비율로 틀을 그림
+   도면 렌더링 — 측정칸을 창 바깥에 배치 (겹침 제거)
+   위: H1·H2·H3(높이 3점) / 왼쪽: W1·W2·W3(폭 3점) / 안: V(벤트, 언발란스)
 =================================================================== */
 function renderDiagram(){
-  const cx=170, cy=145, maxW=178, maxH=164;
+  const L=70,T=48,R=352,B=274;
+  const availW=R-L, availH=B-T, cx=(L+R)/2, cy=(T+B)/2;
   let fw,fh;
-  if(current.w&&current.h){ const s=Math.min(maxW/current.w, maxH/current.h); fw=current.w*s; fh=current.h*s; }
-  else { fw=172; fh=156; }
-  fw=Math.max(fw,64); fh=Math.max(fh,64);
+  if(current.w&&current.h){ const s=Math.min(availW/current.w, availH/current.h); fw=current.w*s; fh=current.h*s; }
+  else { fw=availW*0.70; fh=availH*0.82; }
+  fw=Math.max(60,Math.min(fw,availW)); fh=Math.max(60,Math.min(fh,availH));
   const fx=cx-fw/2, fy=cy-fh/2;
+  const bw=48,bh=22;
   let s='';
+  // 창 프레임 + 형태
   s+=`<rect class="frame" x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="3"/>`;
-  s+=`<rect class="frame-glass" x="${fx+6}" y="${fy+6}" width="${fw-12}" height="${fh-12}"/>`;
+  s+=`<rect class="frame-glass" x="${fx+5}" y="${fy+5}" width="${fw-10}" height="${fh-10}"/>`;
   s+=shapeMullions(fx,fy,fw,fh);
-  const T=[
-    {id:'W-상',o:'h',ax:fy-15,a:fx,b:fx+fw,lx:cx,ly:fy-27,ins:false},
-    {id:'W-중',o:'h',ax:cy,a:fx+13,b:fx+fw-13,lx:cx,ly:cy-6,ins:true},
-    {id:'W-하',o:'h',ax:fy+fh+15,a:fx,b:fx+fw,lx:cx,ly:fy+fh+29,ins:false},
-    {id:'H-좌',o:'v',ax:fx-15,a:fy,b:fy+fh,lx:fx-28,ly:cy,ins:false},
-    {id:'H-중',o:'v',ax:cx,a:fy+13,b:fy+fh-13,lx:cx-12,ly:cy,ins:true},
-    {id:'H-우',o:'v',ax:fx+fw+15,a:fy,b:fy+fh,lx:fx+fw+28,ly:cy,ins:false}
-  ];
-  for(const t of T) s+=targetSVG(t);
+  // H1·H2·H3 (창 위, 가로 나열) — 좌/중/우 지점의 높이
+  const hxs=[fx+fw*(1/6), fx+fw*(1/2), fx+fw*(5/6)];
+  hxs.forEach((x,i)=>{ s+=`<line x1="${x}" y1="${fy-8}" x2="${x}" y2="${fy}" stroke="#C9CFCF" stroke-width="1"/>`; s+=measBox('H'+(i+1), x-bw/2, fy-bh-9, bw, bh); });
+  // W1·W2·W3 (창 왼쪽, 세로 나열) — 상/중/하 지점의 폭
+  const wys=[fy+fh*(1/6), fy+fh*(1/2), fy+fh*(5/6)];
+  wys.forEach((y,i)=>{ s+=`<line x1="${fx-9}" y1="${y}" x2="${fx}" y2="${y}" stroke="#C9CFCF" stroke-width="1"/>`; s+=measBox('W'+(i+1), fx-bw-9, y-bh/2, bw, bh); });
+  // V (벤트, 언발란스) — 벤트짝 위에
+  if(isUnbalanced()){
+    const side=current.side||'좌';
+    let vx = (SHAPE_DEFS[current.shape]||{}).triple ? fx+fw*0.1 : (side==='좌'? fx+fw*0.16 : fx+fw*0.84);
+    s+=measBox('V', vx-bw/2, fy+fh/2-bh/2, bw, bh, true);
+  }
   $('#diagram').innerHTML=s;
 }
-function targetSVG(t){
-  const id=t.id, filled=(id in current.data), active=(activeId===id);
-  const cls='target'+(filled?' filled':'')+(active?' active':'');
-  const cap=6; let seg,caps,hit,rot='';
-  if(t.o==='h'){
-    seg=`<line class="seg" x1="${t.a}" y1="${t.ax}" x2="${t.b}" y2="${t.ax}"/>`;
-    caps=`<line class="cap" x1="${t.a}" y1="${t.ax-cap}" x2="${t.a}" y2="${t.ax+cap}"/><line class="cap" x1="${t.b}" y1="${t.ax-cap}" x2="${t.b}" y2="${t.ax+cap}"/>`;
-    hit=`<rect class="hitbox" data-id="${id}" x="${t.a}" y="${t.ax-16}" width="${t.b-t.a}" height="32"/>`;
-  } else {
-    seg=`<line class="seg" x1="${t.ax}" y1="${t.a}" x2="${t.ax}" y2="${t.b}"/>`;
-    caps=`<line class="cap" x1="${t.ax-cap}" y1="${t.a}" x2="${t.ax+cap}" y2="${t.a}"/><line class="cap" x1="${t.ax-cap}" y1="${t.b}" x2="${t.ax+cap}" y2="${t.b}"/>`;
-    hit=`<rect class="hitbox" data-id="${id}" x="${t.ax-16}" y="${t.a}" width="32" height="${t.b-t.a}"/>`;
-    rot=`transform="rotate(-90 ${t.lx} ${t.ly})"`;
-  }
-  const bg=t.ins?'style="paint-order:stroke;stroke:#F4F6F6;stroke-width:3px"':'';
-  const txt = filled
-    ? `<text class="val" x="${t.lx}" y="${t.ly}" text-anchor="middle" ${rot} ${bg}>${current.data[id]}</text>`
-    : `<text class="lbl" x="${t.lx}" y="${t.ly}" text-anchor="middle" ${rot} ${bg}>${id.replace('-',' · ')}</text>`;
-  return `<g class="${cls}">${seg}${caps}${txt}${hit}</g>`;
+function measBox(id,x,y,w,h,vent){
+  const filled=(id in current.data), active=(activeId===id);
+  const stroke = active?'#019257':(filled?'#15181B':'#C9CFCF');
+  const fill = active?'rgba(1,146,87,0.10)':(vent?'rgba(0,199,117,0.10)':'#FFFFFF');
+  const label = filled? current.data[id] : id;
+  const tcol = filled?'#15181B':(active?'#019257':'#6B7177');
+  const fs = filled?13:11;
+  return `<g class="mbox${active?' mbox-active':''}">
+    <rect data-id="${id}" x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${active||filled?2:1.4}"/>
+    <text x="${x+w/2}" y="${y+h/2+fs/3}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="${fs}" font-weight="600" fill="${tcol}" pointer-events="none">${label}</text>
+  </g>`;
 }
 function shapeMullions(fx,fy,fw,fh){
   const def=SHAPE_DEFS[current.shape]||{};
@@ -386,25 +452,19 @@ function shapeMullions(fx,fy,fw,fh){
   }
   if(def.unbalanced){
     const side=current.side||'좌';
-    if(def.triple) return vline(x0+W*0.2)+vline(x0+W*0.5)+vline(x0+W*0.8)+txt(x0+W*0.1,fy+17,'주','#019257',10)+txt(x0+W*0.9,fy+17,'주','#019257',10);
-    if(side==='좌') return vline(x0+W*0.3)+txt(x0+W*0.15,fy+17,'주','#019257',10);
-    return vline(x0+W*0.7)+txt(x0+W*0.85,fy+17,'주','#019257',10);
+    if(def.triple) return vline(x0+W*0.2)+vline(x0+W*0.5)+vline(x0+W*0.8);
+    if(side==='좌') return vline(x0+W*0.3);
+    return vline(x0+W*0.7);
   }
   let s=''; (def.div||[]).forEach(r=>s+=vline(x0+W*r));
   if(def.lab){ const e=[0,...def.div,1]; for(let i=0;i<def.lab.length;i++) s+=txt(x0+W*((e[i]+e[i+1])/2), ym+4, def.lab[i],'#6B7177',12); }
   return s;
 }
 
-/* ---- jubent / counts / refresh ---- */
-function updateJubentView(){
-  const row=$('#jubentCell'), val=$('#jubentVal'), has='주벤트-W' in current.data;
-  row.classList.toggle('active-cell', activeId==='주벤트-W');
-  row.classList.toggle('filled-cell', has);
-  val.textContent = has?current.data['주벤트-W']:'—';
-}
+/* ---- counts / refresh ---- */
 function updateMeasCount(){ $('#measOpt').textContent=`${filledCount()} / ${getOrder().length}`; }
 function updateRatioTag(){ $('#ratioTag').textContent = (current.w&&current.h)?`도면 비율 적용 · ${current.w} : ${current.h}`:''; }
-function refresh(){ renderDiagram(); updateJubentView(); updateMeasCount(); updateRatioTag(); autosave(); }
+function refresh(){ renderDiagram(); updateMeasCount(); updateRatioTag(); autosave(); }
 
 /* ===== 1 사진 ===== */
 $('#photoInput').addEventListener('change',e=>{
@@ -450,6 +510,76 @@ $('#locInput').addEventListener('input',e=>{ current.location=e.target.value.tri
   document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); autosave(); });
 $('#siteInput').addEventListener('input',e=>{ siteName=e.target.value.trim(); autosave(); });
 
+/* ===== 탭 전환 ===== */
+let expandedIdx=-1;
+function allWindows(){ // 상담 대상 = 저장된 창 + (작성 중 유효 창)
+  const arr=[...windows];
+  return arr;
+}
+function switchTab(name){
+  const meas=name==='measure';
+  $('#measureTab').style.display=meas?'':'none';
+  $('#consultTab').style.display=meas?'none':'';
+  $('#measBar').style.display=meas?'flex':'none';
+  $('#consultBar').style.display=meas?'none':'flex';
+  $('#tabMeasure').classList.toggle('sel',meas);
+  $('#tabConsult').classList.toggle('sel',!meas);
+  if(!meas){ if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); }
+}
+$('#tabMeasure').addEventListener('click',()=>switchTab('measure'));
+$('#tabConsult').addEventListener('click',()=>{
+  if(current.location&&current.w&&current.h){ windows.push(JSON.parse(JSON.stringify(current))); resetForm(); renderTray(); }
+  switchTab('consult');
+});
+
+/* ===== 상담 탭 렌더 ===== */
+function specSummary(w){ const g=GLASS.find(x=>x.id===w.glass); const parts=[g?g.label:'유리 미선택'];
+  if(w.options&&w.options.length)parts.push(w.options.length+'옵션'); return parts.join(' · '); }
+function renderConsult(){
+  $('#tabConsultCnt').textContent = windows.length?`(${windows.length})`:'';
+  const box=$('#consultList');
+  if(!windows.length){ box.innerHTML='<div class="c-empty">먼저 <b>실측 탭</b>에서 창을 측정하고<br>「실측 완료 →」를 누르세요</div>'; return; }
+  box.innerHTML=windows.map((w,i)=>{
+    const open=(i===expandedIdx);
+    return `<div class="c-card ${open?'open':''}" data-ci="${i}">
+      <div class="c-head" data-toggle="${i}">
+        <div class="c-icon">${shapeIcon(w.shape)}</div>
+        <div class="c-info"><b>${w.location||'창 '+(i+1)}</b><span>${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''} · ${w.w}×${w.h} · ${specSummary(w)}</span></div>
+        <div class="c-chev">${open?'▾':'▸'}</div>
+      </div>${open?consultBody(w,i):''}</div>`;
+  }).join('');
+}
+function consultBody(w,i){
+  const shapes=SHAPES.map(s=>`<button class="mini-shape ${w.shape===s.id?'sel':''}" data-shapec="${s.id}" data-ci="${i}">${shapeIcon(s.id)}<span>${s.label}</span></button>`).join('');
+  const sideRow=(SHAPE_DEFS[w.shape]||{}).side?`<div class="c-sub">${(SHAPE_DEFS[w.shape].handle?'핸들':'주벤트')} 방향</div><div class="side-toggle"><button class="${w.side==='좌'?'sel':''}" data-sidec="좌" data-ci="${i}">좌</button><button class="${w.side==='우'?'sel':''}" data-sidec="우" data-ci="${i}">우</button></div>`:'';
+  const glass=GLASS.map(g=>`<button class="spec-card ${w.glass===g.id?'sel':''}" data-glassc="${g.id}" data-ci="${i}"><b>${g.label}</b><span>${g.desc}</span></button>`).join('');
+  const cin=COLORS.map(c=>`<button class="spec-chip ${w.colorIn===c?'sel':''}" data-cinc="${c}" data-ci="${i}">${c}</button>`).join('');
+  const cout=COLORS.map(c=>`<button class="spec-chip ${w.colorOut===c?'sel':''}" data-coutc="${c}" data-ci="${i}">${c}</button>`).join('');
+  const opt=OPTIONS.map(o=>`<button class="spec-chip opt ${(w.options||[]).includes(o)?'sel':''}" data-optc="${o}" data-ci="${i}">${o}</button>`).join('');
+  return `<div class="c-body">
+    <div class="c-sub">창 형태 변경</div><div class="mini-shape-grid">${shapes}</div>${sideRow}
+    <div class="c-sub">유리 사양</div><div class="spec-grid">${glass}</div>
+    <div class="c-sub">색상 · 내부</div><div class="spec-chips">${cin}</div>
+    <div class="c-sub">색상 · 외부</div><div class="spec-chips">${cout}</div>
+    <div class="c-sub">추가 옵션 (다중)</div><div class="spec-chips">${opt}</div>
+  </div>`;
+}
+$('#consultList').addEventListener('click',e=>{
+  const tg=e.target.closest('[data-toggle]');
+  if(tg){ const i=+tg.dataset.toggle; expandedIdx=(expandedIdx===i)?-1:i; renderConsult(); return; }
+  const cel=e.target.closest('[data-ci]'); if(!cel)return; const i=+cel.dataset.ci; const w=windows[i]; if(!w)return;
+  const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]'),gl=e.target.closest('[data-glassc]'),ci=e.target.closest('[data-cinc]'),co=e.target.closest('[data-coutc]'),op=e.target.closest('[data-optc]');
+  if(sh) w.shape=sh.dataset.shapec;
+  else if(sd) w.side=sd.dataset.sidec;
+  else if(gl) w.glass=(w.glass===gl.dataset.glassc)?'':gl.dataset.glassc;
+  else if(ci) w.colorIn=(w.colorIn===ci.dataset.cinc)?'':ci.dataset.cinc;
+  else if(co) w.colorOut=(w.colorOut===co.dataset.coutc)?'':co.dataset.coutc;
+  else if(op){ w.options=w.options||[]; const o=op.dataset.optc,k=w.options.indexOf(o); if(k>=0)w.options.splice(k,1); else w.options.push(o); }
+  else return;
+  renderConsult(); autosave();
+});
+$('#backBtn').addEventListener('click',()=>switchTab('measure'));
+
 /* ===== 3 형태 ===== */
 function shapeIcon(id){
   const R='<rect class="si" x="6" y="6" width="48" height="28"/>';
@@ -481,9 +611,9 @@ function selectShape(id){
   const sideRow=$('#sideRow');
   if(def.side){ sideRow.classList.add('show'); $('#sideLabel').textContent=def.handle?'핸들 방향':'주벤트 방향'; }
   else sideRow.classList.remove('show');
-  if(def.unbalanced) $('#jubentRow').classList.add('show');
-  else { $('#jubentRow').classList.remove('show'); if('주벤트-W' in current.data) delete current.data['주벤트-W']; }
-  if(activeId==='주벤트-W' && !def.unbalanced) activeId=nextEmpty();
+  if(def.unbalanced){ $('#vField').style.display=''; }
+  else { $('#vField').style.display='none'; if('V' in current.data) delete current.data['V']; current.v=null; $('#vInput').value=''; }
+  if(activeId==='V' && !def.unbalanced) activeId=nextEmpty();
   refresh();
 }
 function selectSide(s){ current.side=s; $('#sideLeft').classList.toggle('sel',s==='좌'); $('#sideRight').classList.toggle('sel',s==='우'); refresh(); }
@@ -507,28 +637,26 @@ function record(mm){
   refresh();
 }
 function computeSize(){
-  const w=['W-상','W-중','W-하'].filter(id=>id in current.data).map(id=>current.data[id]);
-  const h=['H-좌','H-중','H-우'].filter(id=>id in current.data).map(id=>current.data[id]);
+  const w=['W1','W2','W3'].filter(id=>id in current.data).map(id=>current.data[id]);
+  const h=['H1','H2','H3'].filter(id=>id in current.data).map(id=>current.data[id]);
   if(w.length){ current.w=Math.min(...w); $('#wInput').value=current.w; }
   if(h.length){ current.h=Math.min(...h); $('#hInput').value=current.h; }
+  if('V' in current.data){ current.v=current.data['V']; $('#vInput').value=current.v; }
   const m=[];
   if(w.length)m.push(`W 최소 ${Math.min(...w)} · 편차 ${Math.max(...w)-Math.min(...w)}mm`);
   if(h.length)m.push(`H 최소 ${Math.min(...h)} · 편차 ${Math.max(...h)-Math.min(...h)}mm`);
-  if('주벤트-W' in current.data)m.push(`주벤트 ${current.data['주벤트-W']}mm`);
-  $('#sizeMeta').textContent=m.length?m.join('  /  '):'실측 6포인트의 최소값을 자동 제안합니다.';
+  if('V' in current.data)m.push(`벤트 V ${current.data['V']}mm`);
+  $('#sizeMeta').textContent=m.length?m.join('  /  '):'W·H는 3점 최소값 자동 제안. 작은 창은 아래 칸을 탭해 직접 입력하세요.';
 }
-$('#wInput').addEventListener('input',e=>{ current.w=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); });
-$('#hInput').addEventListener('input',e=>{ current.h=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); });
+$('#wInput').addEventListener('input',e=>{ current.w=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); autosave(); });
+$('#hInput').addEventListener('input',e=>{ current.h=parseInt(e.target.value)||null; renderDiagram(); updateRatioTag(); autosave(); });
+$('#vInput').addEventListener('input',e=>{ current.v=parseInt(e.target.value)||null; if(current.v){current.data['V']=current.v;} else {delete current.data['V'];} renderDiagram(); autosave(); });
 
 $('#diagram').addEventListener('click',e=>{
   const hb=e.target.closest('[data-id]'); if(!hb)return;
   const id=hb.dataset.id;
   if(id in current.data){ delete current.data[id]; computeSize(); }
   setActive(id);
-});
-$('#jubentCell').addEventListener('click',()=>{
-  if('주벤트-W' in current.data){ delete current.data['주벤트-W']; computeSize(); }
-  setActive('주벤트-W');
 });
 $('#manualBtn').addEventListener('click',()=>{
   const id=activeId||nextEmpty(); if(!id){toast('빈 칸이 없어요');return;}
@@ -581,7 +709,7 @@ function loadIntoForm(win){
   $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.toggle('sel', x.textContent===win.location));
   if(win.location && !LOCATIONS.includes(win.location)) $('#locInput').value=win.location;
   selectShape(win.shape||'2W'); selectSide(win.side||'좌');
-  $('#wInput').value=win.w||''; $('#hInput').value=win.h||'';
+  $('#wInput').value=win.w||''; $('#hInput').value=win.h||''; $('#vInput').value=win.v||'';
   computeSize(); refresh();
 }
 
@@ -591,9 +719,9 @@ function editWindow(i){
   if(current.location&&current.w&&current.h) windows.push(JSON.parse(JSON.stringify(current))); // 작성 중이던 창 보존
   windows.splice(i,1);
   current=JSON.parse(JSON.stringify(win)); activeId=null;
-  loadIntoForm(current); renderTray(); autosave();
+  loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
   window.scrollTo({top:0,behavior:'smooth'});
-  toast('이 창 수정 중 — 끝나면 "다음 창"으로 저장');
+  toast('이 창 재측정 중 — 끝나면 "다음 창"으로 저장');
 }
 
 function resetForm(){
@@ -601,7 +729,7 @@ function resetForm(){
   const box=$('#photoBox'); const img=box.querySelector('img'); if(img)img.remove();
   $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has'); $('#aiBtn').disabled=true;
   $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
-  $('#wInput').value=''; $('#hInput').value='';
+  $('#wInput').value=''; $('#hInput').value=''; $('#vInput').value='';
   $('#sizeMeta').textContent='실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)';
   selectShape('2W'); selectSide('좌'); setActive(null);
   window.scrollTo({top:0,behavior:'smooth'});
@@ -609,34 +737,48 @@ function resetForm(){
 $('#nextBtn').addEventListener('click',()=>{
   if(!current.location){ toast('설치 위치를 입력하세요'); return; }
   if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요'); return; }
-  if(isUnbalanced() && !('주벤트-W' in current.data)){ toast('주벤트 W를 측정하세요'); return; }
+  if(isUnbalanced() && !('V' in current.data)){ toast('벤트 V를 측정/입력하세요'); return; }
   windows.push(JSON.parse(JSON.stringify(current))); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray(); autosave();
 });
 
 /* 세션 확정 저장 (기기) */
 function commitSession(){
   if(!siteName){ toast('상단에 현장/고객명을 입력하세요'); return false; }
-  const all=[...windows]; if(current.location&&current.w&&current.h) all.push(JSON.parse(JSON.stringify(current)));
-  if(all.length===0){ toast('저장할 창이 없어요'); return false; }
+  if(windows.length===0){ toast('저장할 창이 없어요'); return false; }
   const saved=LS.get('kcc_saved')||[]; const id=sessionId||('s'+Date.now());
-  const rec={id,site:siteName,ts:Date.now(),windows:all};
+  const rec={id,site:siteName,ts:Date.now(),windows:JSON.parse(JSON.stringify(windows))};
   const idx=saved.findIndex(x=>x.id===id); if(idx>=0)saved[idx]=rec; else saved.unshift(rec);
   if(!LS.set('kcc_saved',saved)){ toast('저장 공간 부족 — 불러오기에서 오래된 실측을 삭제하세요'); return false; }
   sessionId=id; return true;
 }
+/* 실측 완료 → 상담 탭 */
 $('#finishBtn').addEventListener('click',()=>{
+  if(current.location&&current.w&&current.h){ windows.push(JSON.parse(JSON.stringify(current))); resetForm(); renderTray(); }
+  if(!windows.length){ toast('측정된 창이 없어요'); return; }
+  expandedIdx = windows.length?0:-1;
+  switchTab('consult');
+  toast('상담 탭으로 이동 — 창을 펼쳐 유리·옵션을 정하세요');
+});
+/* 상담 탭 저장 완료 → 기기 저장 + 요약 */
+$('#saveBtn').addEventListener('click',()=>{
   if(!commitSession())return;
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===sessionId);
   $('#sumLead').textContent=`${siteName} · 총 ${rec.windows.length}개 창 · 기기에 저장됨 ✓`;
   const list=$('#sumList'); list.innerHTML='';
   rec.windows.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
-    const jub=('주벤트-W' in w.data)?` · 주벤트 ${w.data['주벤트-W']}`:'';
+    const jub=('V' in w.data)?` · 벤트 ${w.data['V']}`:'';
+    const g=GLASS.find(x=>x.id===w.glass); const gl=g?g.label:'유리 미선택';
+    const col=[w.colorIn&&('내'+w.colorIn),w.colorOut&&('외'+w.colorOut)].filter(Boolean).join('/');
+    const opt=(w.options&&w.options.length)?' · '+w.options.join(','):'';
     item.innerHTML=`${w.photo?`<img src="${w.photo}">`:'<div class="noimg">NO IMG</div>'}
       <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
-      <span>W ${w.w} × H ${w.h} mm${jub}</span></div><div class="num">#${i+1}</div>`;
+      <span>W ${w.w} × H ${w.h} mm${jub}</span>
+      <span>${gl}${col?' · '+col:''}${opt}</span></div><div class="num">#${i+1}</div>`;
     list.appendChild(item); });
   $('#overlay').classList.add('show');
 });
+/* (구) finishBtn 요약 블록 대체됨 */
+function _legacyFinish(){}
 $('#closeSheet').addEventListener('click',()=>$('#overlay').classList.remove('show'));
 $('#overlay').addEventListener('click',e=>{ if(e.target===$('#overlay')) $('#overlay').classList.remove('show'); });
 
@@ -657,7 +799,8 @@ function loadSession(id){
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
   loadIntoForm(current); renderTray(); autosave();
   $('#loadOverlay').classList.remove('show');
-  toast(`'${rec.site}' 불러옴 — 창 칩을 탭해 수정하세요`);
+  expandedIdx = windows.length?0:-1; switchTab('consult');
+  toast(`'${rec.site}' 불러옴 — 창을 펼쳐 상담/수정하세요`);
 }
 function deleteSession(id){ let saved=LS.get('kcc_saved')||[]; saved=saved.filter(x=>x.id!==id); LS.set('kcc_saved',saved); openLoad(); }
 $('#loadBtn').addEventListener('click',openLoad);
@@ -668,7 +811,7 @@ $('#loadList').addEventListener('click',e=>{
 });
 $('#newSessionBtn').addEventListener('click',()=>{
   siteName=''; $('#siteInput').value=''; sessionId=null; windows=[]; current=blankWindow();
-  loadIntoForm(current); renderTray(); autosave(); $('#loadOverlay').classList.remove('show'); toast('새 실측 시작');
+  loadIntoForm(current); renderTray(); autosave(); $('#loadOverlay').classList.remove('show'); switchTab('measure'); toast('새 실측 시작');
 });
 $('#closeLoad').addEventListener('click',()=>$('#loadOverlay').classList.remove('show'));
 $('#loadOverlay').addEventListener('click',e=>{ if(e.target===$('#loadOverlay')) $('#loadOverlay').classList.remove('show'); });
