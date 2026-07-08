@@ -684,7 +684,7 @@ $('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('�
 function startNewSession(){
   siteName=''; custPhone=''; siteAddr=''; siteBuilding=''; siteDetail=''; sessionId=null; editingIndex=null; windows=[]; current=blankWindow();
   $('#siteInput').value=''; $('#custPhone').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
-  expandedIdx=-1; loadIntoForm(current); setActive('W1'); renderTray(); autosave(); switchTab('measure');
+  expandedIdx=-1; phase='measuring'; loadIntoForm(current); setActive('W1'); renderTray(); autosave(); switchTab('measure');
 }
 $('#newBtn').addEventListener('click',()=>{
   if(windows.length || current.location || current.w){
@@ -695,9 +695,12 @@ $('#newBtn').addEventListener('click',()=>{
 
 /* ===== 탭 전환 ===== */
 let expandedIdx=-1;
-function allWindows(){ // 상담 대상 = 저장된 창 + (작성 중 유효 창)
-  const arr=[...windows];
-  return arr;
+let phase='measuring';   // measuring | consulted
+function updateActionLabels(){
+  const nb=$('#nextBtn'), cb=$('#confirmNextBtn');
+  if(editingIndex!=null){ if(nb)nb.textContent='✓ 수정 완료'; if(cb)cb.textContent='✓ 수정 완료'; }
+  else if(phase==='consulted'){ if(nb)nb.textContent='＋ 창 추가'; if(cb)cb.textContent='＋ 이 창 추가'; }
+  else { if(nb)nb.textContent='다음 →'; if(cb)cb.textContent='✓ 확정하고 다음 창 →'; }
 }
 function switchTab(name){
   const meas=name==='measure';
@@ -707,13 +710,12 @@ function switchTab(name){
   $('#consultBar').style.display=meas?'none':'flex';
   $('#tabMeasure').classList.toggle('sel',meas);
   $('#tabConsult').classList.toggle('sel',!meas);
-  if(!meas){ if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); }
+  if(meas) updateActionLabels();
+  else { if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); }
 }
 $('#tabMeasure').addEventListener('click',()=>switchTab('measure'));
-$('#tabConsult').addEventListener('click',()=>{
-  if(current.location&&current.w&&current.h){ windows.push(JSON.parse(JSON.stringify(current))); resetForm(); renderTray(); }
-  switchTab('consult');
-});
+/* 탭 이동은 순수 보기 전환 — 창 저장은 오직 버튼(다음/추가/실측완료)으로만 */
+$('#tabConsult').addEventListener('click',()=>{ switchTab('consult'); });
 
 /* ===== 상담 탭 렌더 ===== */
 function specSummary(w){ const g=GLASS.find(x=>x.id===w.glass); const parts=[g?g.label:'유리 미선택'];
@@ -1015,7 +1017,7 @@ function editWindow(i){
   const win=windows[i]; if(!win)return;
   editingIndex=i;                       // 원본은 그대로 두고, 저장 시 이 자리 갱신
   current=JSON.parse(JSON.stringify(win)); activeId=null;
-  loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
+  loadIntoForm(current); renderTray(); autosave(); switchTab('measure'); updateActionLabels();
   window.scrollTo({top:0,behavior:'smooth'});
   toast(`${i+1}번 창 수정/재실측 중 — 확정하면 같은 번호로 갱신됩니다`);
 }
@@ -1030,6 +1032,7 @@ function resetForm(){
   $('#sizeMeta').textContent='W·H는 3점 최소값을 5mm 반내림해 자동 제안. 확정칸을 길게 눌러 직접 입력.';
   selectShape('2W'); selectSide('좌');
   setActive('W1');                      // 새 창은 자동으로 W1 활성(깜빡)
+  updateActionLabels();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function saveCurrentWindow(){
@@ -1074,8 +1077,9 @@ function commitSession(includeDraft){
 }
 /* 실측 완료 → 상담 탭 */
 $('#finishBtn').addEventListener('click',()=>{
-  if(current.location&&current.w&&current.h){ saveCurrentWindow(); }
+  if(current.location&&current.product&&current.w&&current.h){ if(!saveCurrentWindow()) return; }
   if(!windows.length){ toast('측정된 창이 없어요'); return; }
+  phase='consulted';
   expandedIdx = windows.length?0:-1;
   switchTab('consult');
   toast('상담 탭으로 이동 — 창을 펼쳐 유리·옵션을 정하세요');
@@ -1120,6 +1124,7 @@ function loadSession(id){
   $('#siteInput').value=siteName; $('#custPhone').value=custPhone; sessionId=rec.id; editingIndex=null;
   showFullAddr();
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
+  phase='consulted';
   loadIntoForm(current); renderTray(); autosave();
   $('#loadOverlay').classList.remove('show');
   expandedIdx = windows.length?0:-1; switchTab('consult');
