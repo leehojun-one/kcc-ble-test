@@ -87,6 +87,10 @@
   .c-body .side-toggle{display:flex;gap:6px}
   .c-body .side-toggle button{font-size:13px;padding:7px 18px;border-radius:9px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink);font-weight:600}
   .c-body .side-toggle button.sel{background:var(--laser-deep);color:#fff;border-color:var(--laser-deep)}
+  .c-dia-wrap{margin-top:14px;background:var(--surface-2);border:1px solid var(--hair);border-radius:12px;padding:8px}
+  .consult-dia{width:100%;display:block}
+  .consult-dia .frame{stroke:var(--ink);stroke-width:2.5;fill:#F4F6F6}
+  .consult-dia .frame-glass{fill:rgba(0,199,117,.05)}
   button{font-family:var(--sans);cursor:pointer;border:none}
   .btn{background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:9px 13px;border-radius:10px;white-space:nowrap;transition:transform .08s}
   .btn:active{transform:scale(.97)}
@@ -517,8 +521,9 @@ function measBox(id,x,y,w,h,vent){
     <text x="${x+w/2}" y="${y+h/2+fs/3}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="${fs}" font-weight="600" fill="${tcol}" pointer-events="none">${label}</text>
   </g>`;
 }
-function shapeMullions(fx,fy,fw,fh){
-  const def=SHAPE_DEFS[current.shape]||{};
+function shapeMullions(fx,fy,fw,fh,shape,side){
+  shape = shape||current.shape; side = side||current.side;
+  const def=SHAPE_DEFS[shape]||{};
   const yT=fy+4, yB=fy+fh-4, ym=fy+fh/2, x0=fx, W=fw;
   const vline=x=>`<line x1="${x}" y1="${yT}" x2="${x}" y2="${yB}" stroke="#15181B" stroke-width="2"/>`;
   const txt=(x,y,str,col,size)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="${size}" fill="${col}">${str}</text>`;
@@ -528,7 +533,6 @@ function shapeMullions(fx,fy,fw,fh){
     return `<polyline points="${fx},${yB} ${cxm},${yT} ${fx+fw},${yB}" fill="none" stroke="#15181B" stroke-width="1.6"/>`;
   }
   if(def.handle){
-    const side=current.side||'좌';
     const apexX=side==='좌'?fx+fw:fx, baseX=side==='좌'?fx:fx+fw;
     let s=`<polyline points="${baseX},${yT} ${apexX},${ym} ${baseX},${yB}" fill="none" stroke="#15181B" stroke-width="1.6"/>`;
     const hx=side==='좌'?fx+18:fx+fw-18, dir=side==='좌'?-1:1, tip=hx+dir*14;
@@ -537,14 +541,21 @@ function shapeMullions(fx,fy,fw,fh){
     return s;
   }
   if(def.unbalanced){
-    const side=current.side||'좌';
     if(def.triple) return vline(x0+W*0.2)+vline(x0+W*0.5)+vline(x0+W*0.8);
     if(side==='좌') return vline(x0+W*0.3);
     return vline(x0+W*0.7);
   }
+  // 2W: 가운데 분할선 + 고정문 방향 화살표
+  if(shape==='2W'){
+    let s=vline(x0+W*0.5);
+    const ax = side==='좌' ? x0+W*0.25 : x0+W*0.75;   // 고정문(화살표) 방향
+    const dir = side==='좌' ? -1 : 1, tip=ax+dir*16;
+    s+=`<line x1="${ax}" y1="${ym}" x2="${tip}" y2="${ym}" stroke="#019257" stroke-width="2"/>`;
+    s+=`<polyline points="${tip-dir*6},${ym-4} ${tip},${ym} ${tip-dir*6},${ym+4}" fill="none" stroke="#019257" stroke-width="2"/>`;
+    return s;
+  }
   // 2W(1:2): 좌/우에 따라 큰문 위치 반전
-  if(current.shape==='2W12'){
-    const side=current.side||'좌';
+  if(shape==='2W12'){
     const r = side==='좌' ? 1/3 : 2/3;   // 좌=왼쪽 작음(1:2), 우=오른쪽 작음(2:1)
     const labs = side==='좌' ? ['1','2'] : ['2','1'];
     const e=[0,r,1];
@@ -702,11 +713,29 @@ function consultBody(w,i){
   const opt=OPTIONS.map(o=>`<button class="spec-chip opt ${(w.options||[]).includes(o)?'sel':''}" data-optc="${o}" data-ci="${i}">${o}</button>`).join('');
   return `<div class="c-body">
     <div class="c-sub">창 형태 변경</div><div class="mini-shape-grid">${shapes}</div>${sideRow}
+    <div class="c-dia-wrap">${winDiagramSVG(w)}</div>
     <div class="c-sub">유리 사양</div><div class="spec-grid">${glass}</div>
     <div class="c-sub">색상 · 내부</div><div class="spec-chips">${cin}</div>
     <div class="c-sub">색상 · 외부</div><div class="spec-chips">${cout}</div>
     <div class="c-sub">추가 옵션 (다중)</div><div class="spec-chips">${opt}</div>
   </div>`;
+}
+/* 상담탭 실시간 도면 (형태·방향·비율 반영, 측정칸 없이) */
+function winDiagramSVG(w){
+  const VB=320, availW=280, availH=170, cx=160, cy=95;
+  let fw,fh;
+  if(w.w&&w.h){ const s=Math.min(availW/w.w,availH/w.h); fw=w.w*s; fh=w.h*s; }
+  else { fw=availW*0.7; fh=availH*0.8; }
+  fw=Math.max(50,Math.min(fw,availW)); fh=Math.max(50,Math.min(fh,availH));
+  const fx=cx-fw/2, fy=cy-fh/2;
+  let s=`<svg viewBox="0 0 ${VB} 210" class="consult-dia">`;
+  s+=`<rect class="frame" x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="3"/>`;
+  s+=`<rect class="frame-glass" x="${fx+5}" y="${fy+5}" width="${fw-10}" height="${fh-10}"/>`;
+  s+=shapeMullions(fx,fy,fw,fh,w.shape,w.side);
+  const dim=`${w.w||'—'} × ${w.h||'—'}`+(('V' in w.data)?` · V${w.data['V']}`:'');
+  s+=`<text x="${cx}" y="${fy+fh+22}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" font-weight="600" fill="#15181B">${dim}</text>`;
+  s+='</svg>';
+  return s;
 }
 $('#consultList').addEventListener('click',e=>{
   const tg=e.target.closest('[data-toggle]');
@@ -796,14 +825,18 @@ function computeSize(){
 }
 
 /* ── 커스텀 숫자 키패드 ── */
-let kpTarget=null, kpBuf='0';
+let kpTarget=null, kpBuf='0', kpOpen=false, kpReady=false;
 function openKeypad(field){
+  if(kpOpen) return;
   kpTarget=field; kpBuf='0';
   $('#kpLabel').textContent = field==='w'?'넓이 W':field==='h'?'높이 H':'벤트 V';
   $('#kpVal').textContent=kpBuf;
+  kpOpen=true; kpReady=false; setTimeout(()=>{ kpReady=true; },380);   // 열린 직후 오터치 차단
   $('#kpOverlay').classList.add('show');
 }
+function closeKeypad(){ kpOpen=false; kpReady=false; $('#kpOverlay').classList.remove('show'); }
 $('#kpGrid').addEventListener('click',e=>{
+  if(!kpReady) return;                         // 키패드 뜬 직후엔 눌림 무시(간섭 방지)
   const b=e.target.closest('[data-k]'); if(!b)return; const k=b.dataset.k;
   if(k==='C') kpBuf='0';
   else if(k==='back') kpBuf = kpBuf.length>1 ? kpBuf.slice(0,-1) : '0';
@@ -811,21 +844,32 @@ $('#kpGrid').addEventListener('click',e=>{
   $('#kpVal').textContent=kpBuf;
 });
 $('#kpDone').addEventListener('click',()=>{
+  if(!kpReady) return;
   const val=floor5(parseInt(kpBuf)||0);
   current[kpTarget]= val||null;
   if(kpTarget==='v'){ if(val) current.data['V']=val; else delete current.data['V']; }
   renderSizeDisplay(); renderDiagram(); updateRatioTag(); updateMeasCount(); autosave();
-  $('#kpOverlay').classList.remove('show');
+  closeKeypad();
 });
-$('#kpOverlay').addEventListener('click',e=>{ if(e.target===$('#kpOverlay')) $('#kpOverlay').classList.remove('show'); });
-/* 확정사이즈: 길게 눌러 키패드 (자동값 실수 방지) */
+$('#kpOverlay').addEventListener('click',e=>{ if(e.target===$('#kpOverlay')) closeKeypad(); });
+
+/* 확정사이즈 직접입력: ① 길게 누르기  ② 두 번 터치 (자동값 실수 방지) */
 document.querySelectorAll('.size-box').forEach(b=>{
-  let t=null;
-  const start=()=>{ t=setTimeout(()=>{ t=null; openKeypad(b.dataset.field); }, 450); };
-  const cancel=()=>{ if(t){ clearTimeout(t); t=null; } };
-  b.addEventListener('touchstart',start,{passive:true});
-  b.addEventListener('touchend',cancel); b.addEventListener('touchmove',cancel);
-  b.addEventListener('mousedown',start); b.addEventListener('mouseup',cancel); b.addEventListener('mouseleave',cancel);
+  let lt=null, sx=0, sy=0, lastTap=0, moved=false;
+  const open=()=>{ if(!kpOpen) openKeypad(b.dataset.field); };
+  // 터치
+  b.addEventListener('touchstart',e=>{ if(kpOpen)return; const t=e.touches[0]; sx=t.clientX; sy=t.clientY; moved=false;
+    lt=setTimeout(()=>{ lt=null; open(); },500); },{passive:true});
+  b.addEventListener('touchmove',e=>{ const t=e.touches[0]; if(Math.abs(t.clientX-sx)>14||Math.abs(t.clientY-sy)>14){ moved=true; if(lt){clearTimeout(lt);lt=null;} } },{passive:true});
+  b.addEventListener('touchend',e=>{ if(lt){ clearTimeout(lt); lt=null; }
+    if(moved||kpOpen) return;
+    const now=Date.now(); if(now-lastTap<340){ lastTap=0; open(); } else lastTap=now; });
+  // 데스크톱: 더블클릭 + 길게 누르기
+  b.addEventListener('dblclick',open);
+  let mt=null;
+  b.addEventListener('mousedown',()=>{ if(kpOpen)return; mt=setTimeout(()=>{mt=null;open();},500); });
+  b.addEventListener('mouseup',()=>{ if(mt){clearTimeout(mt);mt=null;} });
+  b.addEventListener('mouseleave',()=>{ if(mt){clearTimeout(mt);mt=null;} });
 });
 
 $('#diagram').addEventListener('click',e=>{
@@ -899,15 +943,14 @@ function loadIntoForm(win){
   computeSize(); refresh();
 }
 
-/* 완료된 창 다시 수정/재실측 — 순번(자리) 유지 */
+/* 완료된 창 다시 수정/재실측 — 제자리(번호) 고정 */
 function editWindow(i){
   const win=windows[i]; if(!win)return;
-  editingIndex=i;                       // 저장 시 이 자리로 되돌림
-  windows.splice(i,1);
+  editingIndex=i;                       // 원본은 그대로 두고, 저장 시 이 자리 갱신
   current=JSON.parse(JSON.stringify(win)); activeId=null;
   loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
   window.scrollTo({top:0,behavior:'smooth'});
-  toast(`${i+1}번 창 수정/재실측 중 — 확정하면 같은 순번으로 저장됩니다`);
+  toast(`${i+1}번 창 수정/재실측 중 — 확정하면 같은 번호로 갱신됩니다`);
 }
 
 function resetForm(){
@@ -927,7 +970,7 @@ function saveCurrentWindow(){
   if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요 (칸을 길게 누르면 키패드)'); return false; }
   if(isUnbalanced() && !('V' in current.data)){ toast('벤트 V를 측정/입력하세요'); return false; }
   const win=JSON.parse(JSON.stringify(current));
-  if(editingIndex!=null){ windows.splice(editingIndex,0,win); const n=editingIndex+1; editingIndex=null; toast(`${n}번 창 수정 저장됨 ✓`); }
+  if(editingIndex!=null){ const n=editingIndex+1; windows[editingIndex]=win; editingIndex=null; toast(`${n}번 창 갱신됨 ✓`); }
   else { windows.push(win); toast(`창 ${windows.length} 저장됨 ✓`); }
   resetForm(); renderTray(); autosave(); return true;
 }
@@ -946,7 +989,7 @@ function commitSession(includeDraft){
   const all=[...windows];
   if(includeDraft && current.location && current.w && current.h){
     const win=JSON.parse(JSON.stringify(current));
-    if(editingIndex!=null) all.splice(editingIndex,0,win); else all.push(win);
+    if(editingIndex!=null) all[editingIndex]=win; else all.push(win);
   }
   if(!siteName){ toast('고객명을 입력하세요'); return false; }
   if(all.length===0){ toast('저장할 창이 없어요'); return false; }
