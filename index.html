@@ -185,6 +185,20 @@
   .kp-grid button:active{background:var(--surface-2);transform:scale(.97)}
   .kp-grid .kp-fn{color:var(--laser-deep)}
   .kp-done{width:100%;margin-top:11px;background:var(--ink);color:#fff;font-size:15px;font-weight:600;padding:15px;border-radius:13px}
+
+  /* 실측 카드 내 확정사이즈 블록 */
+  .size-block{margin-top:13px;padding-top:13px;border-top:1px dashed var(--hair);background:linear-gradient(180deg,#FBF3E0,#FCF7EA);margin-left:-14px;margin-right:-14px;margin-bottom:-14px;padding:13px 14px 14px;border-radius:0 0 15px 15px}
+  .confirm-next{width:100%;margin-top:12px;background:var(--laser-deep);color:#fff;font-size:15px;font-weight:700;padding:15px;border-radius:13px}
+  .confirm-next:active{transform:scale(.98)}
+
+  /* 실측 목록 */
+  .ml-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--surface-2);cursor:pointer}
+  .ml-row:last-child{border-bottom:none}
+  .ml-num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--laser-deep);flex:none;width:22px}
+  .ml-txt{flex:1;min-width:0}
+  .ml-txt b{font-size:13px;font-weight:600}
+  .ml-txt span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ml-edit{font-family:var(--mono);font-size:10px;color:var(--muted);flex:none}
   .ratio-tag{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;margin-top:2px}
 
   .jubent{display:none;margin-top:12px;border-top:1px dashed var(--hair);padding-top:12px}
@@ -253,6 +267,7 @@
     <button class="btn sm ghost" id="addrBtn">🔍 주소</button>
   </div>
   <div class="addr-line" id="addrLine" style="display:none"></div>
+  <input class="site-input" id="siteDetail" placeholder="상세주소 (예: 101동 1502호)" style="margin-top:7px;width:100%">
   <div class="toolbar-top">
     <button id="saveTopBtn">💾 저장</button>
     <button id="loadBtn">📂 불러오기</button>
@@ -288,14 +303,20 @@
 
 <!-- 2 위치 -->
 <div class="card">
-  <div class="step-h"><span class="step-n">2</span><h2>설치 위치</h2></div>
+  <div class="step-h"><span class="step-n">2</span><h2>설치 위치</h2><span class="opt" id="locOpt"></span></div>
   <div class="loc-chips" id="locChips"></div>
-  <input class="loc-input" id="locInput" placeholder="직접 입력 (예: 거실 큰창, 안방 우측창)">
+  <input class="loc-input" id="locInput" placeholder="직접 입력">
 </div>
 
-<!-- 3 창 형태 -->
+<!-- 3 창 종류 -->
 <div class="card">
-  <div class="step-h"><span class="step-n">3</span><h2>창 형태</h2><span class="opt" id="shapeOpt">2W</span></div>
+  <div class="step-h"><span class="step-n">3</span><h2>창 종류</h2><span class="opt" id="productOpt">미선택</span></div>
+  <div class="spec-chips" id="productChips"></div>
+</div>
+
+<!-- 4 창 형태 -->
+<div class="card">
+  <div class="step-h"><span class="step-n">4</span><h2>창 형태</h2><span class="opt" id="shapeOpt">2W</span></div>
   <div class="shape-grid" id="shapeGrid"></div>
   <div class="side-row" id="sideRow">
     <span class="sl" id="sideLabel">핸들 방향</span>
@@ -303,9 +324,9 @@
   </div>
 </div>
 
-<!-- 4 실측 -->
+<!-- 5 실측 + 확정 사이즈 -->
 <div class="card">
-  <div class="step-h"><span class="step-n">4</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
+  <div class="step-h"><span class="step-n">5</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
   <svg class="diagram" id="diagram" viewBox="0 0 360 300" role="img" aria-label="창호 실측 도면"></svg>
   <div class="measure-hint" id="measureHint">칸을 탭하고 측정기 버튼을 누르세요</div>
   <div class="ratio-tag" id="ratioTag"></div>
@@ -313,17 +334,21 @@
     <button class="btn ghost sm" id="manualBtn" style="flex:1">직접 입력</button>
     <button class="btn ghost sm" id="simBtn" style="flex:1">시뮬레이션</button>
   </div>
+  <div class="size-block">
+    <div class="size-grid">
+      <div class="size-box" data-field="w"><label>넓이 W</label><div class="sv" id="wVal">—</div><div class="su">mm</div></div>
+      <div class="size-box" data-field="h"><label>높이 H</label><div class="sv" id="hVal">—</div><div class="su">mm</div></div>
+      <div class="size-box vbox" id="vBox" data-field="v" style="display:none"><label>벤트 V</label><div class="sv" id="vVal">—</div><div class="su">mm</div></div>
+    </div>
+    <div class="size-meta" id="sizeMeta">W·H는 3점 최소값 자동 제안. 확정칸을 길게 눌러 직접 입력하세요.</div>
+    <button class="confirm-next" id="confirmNextBtn">✓ 확정하고 다음 창 →</button>
+  </div>
 </div>
 
-<!-- 5 확정 사이즈 -->
-<div class="card size-card">
-  <div class="step-h"><span class="step-n">5</span><h2>확정 사이즈</h2><span class="opt">탭해서 직접 입력</span></div>
-  <div class="size-grid">
-    <div class="size-box" data-field="w"><label>넓이 W</label><div class="sv" id="wVal">—</div><div class="su">mm</div></div>
-    <div class="size-box" data-field="h"><label>높이 H</label><div class="sv" id="hVal">—</div><div class="su">mm</div></div>
-    <div class="size-box vbox" id="vBox" data-field="v" style="display:none"><label>벤트 V</label><div class="sv" id="vVal">—</div><div class="su">mm</div></div>
-  </div>
-  <div class="size-meta" id="sizeMeta">W·H는 3점 최소값 자동 제안. 작은 창은 칸을 탭해 직접 입력하세요.</div>
+<!-- 6 실측 목록(누적) -->
+<div class="card" id="measListCard" style="display:none">
+  <div class="step-h"><span class="step-n">6</span><h2>실측 목록</h2><span class="opt" id="measListCnt"></span></div>
+  <div id="measList"></div>
 </div>
 
 </div><!-- /measureTab -->
@@ -381,7 +406,8 @@ const SVC_UUID='02a6c0d0-0451-4000-b000-fb3210111989';
 const CHAR_UUID='02a6c0d1-0451-4000-b000-fb3210111989';
 const ENABLE_CMD=new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]);
 const PKT_PREFIX=[0xc0,0x55,0x10,0x06];
-const LOCATIONS=['거실창','안방창','작은방창','주방창','베란다창','욕실창'];
+const LOCATIONS=['거실발코니','안방발코니','거실분합','안방창','후면방발코니','후면방','입구방발코니','입구방','입구우방발코니','입구우방','입구좌방발코니','입구좌방','주방창','주방발코니','세탁실','세탁실(좌)','세탁실(중)','세탁실우','거실터닝도어','주방터닝도어','현관전실'];
+const PRODUCTS=['발코니이중창','발코니단창','공틀일체형단창','일반이중창','일반단창','고정창','터닝도어','PJ창'];
 
 /* ── 유리·옵션 목록 (실제 KCC 사양으로 여기만 바꾸면 됩니다) ── */
 const GLASS=[
@@ -411,8 +437,8 @@ const SHAPE_DEFS={
 function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id; }
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
-let siteName='', siteAddr='', sessionId=null;
-function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[]}; }
+let siteName='', siteAddr='', siteDetail='', sessionId=null;
+function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[]}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -420,7 +446,7 @@ const LS={
   get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
 };
-function autosave(){ LS.set('kcc_current',{site:siteName,addr:siteAddr,sessionId,windows,draft:current,ts:Date.now()}); }
+function autosave(){ LS.set('kcc_current',{site:siteName,addr:siteAddr,detail:siteDetail,sessionId,windows,draft:current,ts:Date.now()}); }
 
 /* 사진 압축 (저장공간 절약 + AI 전송 속도) */
 function compressImage(dataUrl,maxW,q){
@@ -569,12 +595,20 @@ const chipsWrap=$('#locChips');
 LOCATIONS.forEach(name=>{
   const c=document.createElement('button'); c.className='loc-chip'; c.textContent=name;
   c.addEventListener('click',()=>{ current.location=name; $('#locInput').value='';
-    document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); autosave(); });
+    document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); $('#locOpt').textContent=name; autosave(); });
   chipsWrap.appendChild(c);
 });
-$('#locInput').addEventListener('input',e=>{ current.location=e.target.value.trim();
+$('#locInput').addEventListener('input',e=>{ current.location=e.target.value.trim(); $('#locOpt').textContent=current.location;
   document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); autosave(); });
+
+/* 창 종류(제품) */
+$('#productChips').innerHTML=PRODUCTS.map(p=>`<button class="spec-chip" data-product="${p}">${p}</button>`).join('');
+function renderProduct(){ document.querySelectorAll('[data-product]').forEach(c=>c.classList.toggle('sel',c.dataset.product===current.product)); $('#productOpt').textContent=current.product||'미선택'; }
+$('#productChips').addEventListener('click',e=>{ const b=e.target.closest('[data-product]'); if(!b)return;
+  current.product = current.product===b.dataset.product?'':b.dataset.product; renderProduct(); autosave(); });
+
 $('#siteInput').addEventListener('input',e=>{ siteName=e.target.value.trim(); autosave(); });
+$('#siteDetail').addEventListener('input',e=>{ siteDetail=e.target.value.trim(); autosave(); });
 
 /* 도로명주소 검색 (다음 우편번호 서비스) */
 $('#addrBtn').addEventListener('click',()=>{
@@ -591,8 +625,8 @@ $('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('�
 
 /* 새 실측(초기화) */
 function startNewSession(){
-  siteName=''; siteAddr=''; sessionId=null; windows=[]; current=blankWindow();
-  $('#siteInput').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
+  siteName=''; siteAddr=''; siteDetail=''; sessionId=null; windows=[]; current=blankWindow();
+  $('#siteInput').value=''; $('#siteDetail').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
   expandedIdx=-1; loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
 }
 $('#newBtn').addEventListener('click',()=>{
@@ -636,7 +670,7 @@ function renderConsult(){
     return `<div class="c-card ${open?'open':''}" data-ci="${i}">
       <div class="c-head" data-toggle="${i}">
         <div class="c-icon">${shapeIcon(w.shape)}</div>
-        <div class="c-info"><b>${w.location||'창 '+(i+1)}</b><span>${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''} · ${w.w}×${w.h} · ${specSummary(w)}</span></div>
+        <div class="c-info"><b>${w.location||'창 '+(i+1)}</b><span>${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''} · ${w.w}×${w.h} · ${specSummary(w)}</span></div>
         <div class="c-chev">${open?'▾':'▸'}</div>
       </div>${open?consultBody(w,i):''}</div>`;
   }).join('');
@@ -771,7 +805,15 @@ $('#kpDone').addEventListener('click',()=>{
   $('#kpOverlay').classList.remove('show');
 });
 $('#kpOverlay').addEventListener('click',e=>{ if(e.target===$('#kpOverlay')) $('#kpOverlay').classList.remove('show'); });
-document.querySelectorAll('.size-box').forEach(b=>b.addEventListener('click',()=>openKeypad(b.dataset.field)));
+/* 확정사이즈: 길게 눌러 키패드 (자동값 실수 방지) */
+document.querySelectorAll('.size-box').forEach(b=>{
+  let t=null;
+  const start=()=>{ t=setTimeout(()=>{ t=null; openKeypad(b.dataset.field); }, 450); };
+  const cancel=()=>{ if(t){ clearTimeout(t); t=null; } };
+  b.addEventListener('touchstart',start,{passive:true});
+  b.addEventListener('touchend',cancel); b.addEventListener('touchmove',cancel);
+  b.addEventListener('mousedown',start); b.addEventListener('mouseup',cancel); b.addEventListener('mouseleave',cancel);
+});
 
 $('#diagram').addEventListener('click',e=>{
   const hb=e.target.closest('[data-id]'); if(!hb)return;
@@ -811,6 +853,19 @@ function setConn(on){ $('#dot').classList.toggle('on',on); $('#connState').textC
 $('#connectBtn').addEventListener('click',()=>{ if(device&&device.gatt.connected) device.gatt.disconnect(); else connect(); });
 
 /* ===== 저장 / 다음 / 완료 / 불러오기 / 수정 ===== */
+function winLine(w){
+  const parts=[w.location||'(위치)', w.product||'(창종류)', shapeLabel(w.shape)+((SHAPE_DEFS[w.shape]||{}).side?w.side:'')];
+  const dims=`W:${w.w||'—'} / H:${w.h||'—'}`+(('V' in w.data)?` / V:${w.data['V']}`:'');
+  return {head:parts.join(' / '), dims};
+}
+function renderMeasList(){
+  const card=$('#measListCard'), box=$('#measList');
+  if(!windows.length){ card.style.display='none'; box.innerHTML=''; $('#measListCnt').textContent=''; return; }
+  card.style.display=''; $('#measListCnt').textContent=`${windows.length}창`;
+  box.innerHTML=windows.map((w,i)=>{ const L=winLine(w);
+    return `<div class="ml-row" data-edit="${i}"><div class="ml-num">${i+1})</div><div class="ml-txt"><b>${L.head}</b><span>${L.dims}</span></div><div class="ml-edit">수정 ›</div></div>`;
+  }).join('');
+}
 function renderTray(){
   const tray=$('#tray'); tray.innerHTML='';
   windows.forEach((w,i)=>{ const d=document.createElement('div'); d.className='chip-done'; d.dataset.edit=i;
@@ -818,8 +873,10 @@ function renderTray(){
     tray.appendChild(d); });
   const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`창 ${windows.length+1} 작업 중`; tray.appendChild(cur);
   tray.scrollLeft=tray.scrollWidth;
+  renderMeasList();
 }
 $('#tray').addEventListener('click',e=>{ const c=e.target.closest('[data-edit]'); if(!c)return; editWindow(parseInt(c.dataset.edit)); });
+$('#measList').addEventListener('click',e=>{ const c=e.target.closest('[data-edit]'); if(!c)return; editWindow(parseInt(c.dataset.edit)); });
 
 /* 폼에 한 창 불러오기 */
 function loadIntoForm(win){
@@ -829,6 +886,8 @@ function loadIntoForm(win){
   else { if(img)img.remove(); $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has'); $('#aiBtn').disabled=true; }
   $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.toggle('sel', x.textContent===win.location));
   if(win.location && !LOCATIONS.includes(win.location)) $('#locInput').value=win.location;
+  $('#locOpt').textContent=win.location||'';
+  current.product=win.product||''; renderProduct();
   selectShape(win.shape||'2W'); selectSide(win.side||'좌');
   renderSizeDisplay();
   computeSize(); refresh();
@@ -849,27 +908,41 @@ function resetForm(){
   current=blankWindow(); activeId=null;
   const box=$('#photoBox'); const img=box.querySelector('img'); if(img)img.remove();
   $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has'); $('#aiBtn').disabled=true;
-  $('#locInput').value=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
+  $('#locInput').value=''; $('#locOpt').textContent=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
+  renderProduct();
   current.w=null;current.h=null;current.v=null; renderSizeDisplay();
-  $('#sizeMeta').textContent='실측 6포인트의 최소값을 자동 제안합니다. (KCC 보정 로직은 이후 단계)';
+  $('#sizeMeta').textContent='W·H는 3점 최소값 자동 제안. 확정칸을 길게 눌러 직접 입력하세요.';
   selectShape('2W'); selectSide('좌'); setActive(null);
   window.scrollTo({top:0,behavior:'smooth'});
 }
-$('#nextBtn').addEventListener('click',()=>{
-  if(!current.location){ toast('설치 위치를 입력하세요'); return; }
-  if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요'); return; }
-  if(isUnbalanced() && !('V' in current.data)){ toast('벤트 V를 측정/입력하세요'); return; }
-  windows.push(JSON.parse(JSON.stringify(current))); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray(); autosave();
-});
+function saveCurrentWindow(){
+  if(!current.location){ toast('설치 위치를 입력하세요'); return false; }
+  if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요 (칸을 길게 누르면 키패드)'); return false; }
+  if(isUnbalanced() && !('V' in current.data)){ toast('벤트 V를 측정/입력하세요'); return false; }
+  windows.push(JSON.parse(JSON.stringify(current))); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray(); autosave(); return true;
+}
+$('#nextBtn').addEventListener('click',saveCurrentWindow);
+$('#confirmNextBtn').addEventListener('click',saveCurrentWindow);
 
+/* 세션 저장코드 생성: YYMMDD + 그날 순번(3자리) */
+function genCode(saved){
+  const d=new Date(); const yy=String(d.getFullYear()).slice(2);
+  const ymd=yy+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  const n=saved.filter(s=>(s.code||'').startsWith(ymd)).length+1;
+  return ymd+String(n).padStart(3,'0');
+}
 /* 세션 확정 저장 (기기) */
 function commitSession(includeDraft){
   const all=[...windows];
   if(includeDraft && current.location && current.w && current.h) all.push(JSON.parse(JSON.stringify(current)));
   if(!siteName){ toast('상단에 현장/고객명을 입력하세요'); return false; }
   if(all.length===0){ toast('저장할 창이 없어요'); return false; }
-  const saved=LS.get('kcc_saved')||[]; const id=sessionId||('s'+Date.now());
-  const rec={id,site:siteName,addr:siteAddr,ts:Date.now(),windows:all};
+  const saved=LS.get('kcc_saved')||[];
+  const existing = sessionId ? saved.find(x=>x.id===sessionId) : null;
+  const id = sessionId || ('s'+Date.now());
+  const code = existing?.code || genCode(saved);
+  const label = `${code} ${siteName}${siteDetail?' '+siteDetail:''}`;
+  const rec={id,code,label,site:siteName,addr:siteAddr,detail:siteDetail,ts:Date.now(),windows:all};
   const idx=saved.findIndex(x=>x.id===id); if(idx>=0)saved[idx]=rec; else saved.unshift(rec);
   if(!LS.set('kcc_saved',saved)){ toast('저장 공간 부족 — 불러오기에서 오래된 실측을 삭제하세요'); return false; }
   sessionId=id; return true;
@@ -886,7 +959,7 @@ $('#finishBtn').addEventListener('click',()=>{
 $('#saveBtn').addEventListener('click',()=>{
   if(!commitSession())return;
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===sessionId);
-  $('#sumLead').textContent=`${siteName} · 총 ${rec.windows.length}개 창 · 기기에 저장됨 ✓`;
+  $('#sumLead').textContent=`${rec.label||siteName} · 총 ${rec.windows.length}개 창 · 기기에 저장됨 ✓`;
   const list=$('#sumList'); list.innerHTML='';
   rec.windows.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
     const jub=('V' in w.data)?` · 벤트 ${w.data['V']}`:'';
@@ -894,7 +967,7 @@ $('#saveBtn').addEventListener('click',()=>{
     const col=[w.colorIn&&('내'+w.colorIn),w.colorOut&&('외'+w.colorOut)].filter(Boolean).join('/');
     const opt=(w.options&&w.options.length)?' · '+w.options.join(','):'';
     item.innerHTML=`${w.photo?`<img src="${w.photo}">`:'<div class="noimg">NO IMG</div>'}
-      <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
+      <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
       <span>W ${w.w} × H ${w.h} mm${jub}</span>
       <span>${gl}${col?' · '+col:''}${opt}</span></div><div class="num">#${i+1}</div>`;
     list.appendChild(item); });
@@ -912,13 +985,14 @@ function openLoad(){
   const list=$('#loadList'); list.innerHTML='';
   saved.forEach(rec=>{ const d=document.createElement('div'); d.className='load-item';
     const date=new Date(rec.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});
-    d.innerHTML=`<div class="li-main" data-id="${rec.id}"><b>${rec.site||'(현장명 없음)'}</b><span>${rec.addr?'📍'+rec.addr+' · ':''}창 ${rec.windows.length}개 · ${date}</span></div><button class="li-del" data-del="${rec.id}">삭제</button>`;
+    d.innerHTML=`<div class="li-main" data-id="${rec.id}"><b>${rec.label||rec.site||'(현장명 없음)'}</b><span>${rec.addr?'📍'+rec.addr+' · ':''}창 ${rec.windows.length}개 · ${date}</span></div><button class="li-del" data-del="${rec.id}">삭제</button>`;
     list.appendChild(d); });
   $('#loadOverlay').classList.add('show');
 }
 function loadSession(id){
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===id); if(!rec)return;
-  siteName=rec.site; siteAddr=rec.addr||''; $('#siteInput').value=siteName; sessionId=rec.id;
+  siteName=rec.site; siteAddr=rec.addr||''; siteDetail=rec.detail||'';
+  $('#siteInput').value=siteName; $('#siteDetail').value=siteDetail; sessionId=rec.id;
   const line=$('#addrLine'); if(siteAddr){ line.textContent='📍 '+siteAddr; line.style.display=''; } else line.style.display='none';
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
   loadIntoForm(current); renderTray(); autosave();
@@ -945,7 +1019,7 @@ $('#loadOverlay').addEventListener('click',e=>{ if(e.target===$('#loadOverlay'))
   const r=LS.get('kcc_current');
   const hasWork = r && ((r.windows&&r.windows.length) || (r.draft&&r.draft.location) || (r.draft&&r.draft.data&&Object.keys(r.draft.data).length) || r.site);
   if(hasWork){
-    siteName=r.site||''; siteAddr=r.addr||''; $('#siteInput').value=siteName; sessionId=r.sessionId||null;
+    siteName=r.site||''; siteAddr=r.addr||''; siteDetail=r.detail||''; $('#siteInput').value=siteName; $('#siteDetail').value=siteDetail; sessionId=r.sessionId||null;
     if(siteAddr){ const line=$('#addrLine'); line.textContent='📍 '+siteAddr; line.style.display=''; }
     windows=r.windows||[]; current=r.draft||blankWindow();
     loadIntoForm(current); renderTray();
