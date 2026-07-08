@@ -34,6 +34,10 @@
   .conn .ct b{color:var(--ink);font-weight:600;display:block;font-family:var(--sans);font-size:12px}
 
   .site-bar{display:flex;gap:8px;padding:0 2px}
+  .addr-line{font-family:var(--mono);font-size:11px;color:var(--laser-deep);padding:5px 4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .toolbar-top{display:flex;gap:6px;padding:8px 2px 0}
+  .toolbar-top button{flex:1;font-family:var(--sans);font-size:12px;font-weight:600;padding:8px;border-radius:9px;border:1px solid var(--hair);background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+  .toolbar-top button:active{background:var(--surface-2)}
   .site-input{flex:1;font-family:var(--sans);font-size:14px;font-weight:600;padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
   .site-input:focus{outline:none;border-color:var(--laser-deep)}
   .load-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:12px;margin-bottom:8px}
@@ -235,6 +239,7 @@
   .logbody{border-top:1px solid var(--hair);max-height:150px;overflow-y:auto;background:#0E1113}
   .logbody pre{font-family:var(--mono);font-size:10px;line-height:1.7;color:#9BE7C4;padding:10px 13px;white-space:pre-wrap;word-break:break-all}
 </style>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
 
@@ -245,7 +250,13 @@
   </header>
   <div class="site-bar">
     <input class="site-input" id="siteInput" placeholder="현장/고객명 (예: 래미안 101-1502)">
-    <button class="btn sm ghost" id="loadBtn">📂 불러오기</button>
+    <button class="btn sm ghost" id="addrBtn">🔍 주소</button>
+  </div>
+  <div class="addr-line" id="addrLine" style="display:none"></div>
+  <div class="toolbar-top">
+    <button id="saveTopBtn">💾 저장</button>
+    <button id="loadBtn">📂 불러오기</button>
+    <button id="newBtn">＋ 새 실측</button>
   </div>
   <div class="tray" id="tray"><div class="chip-cur">창 1 작업 중</div></div>
   <div class="tabbar">
@@ -400,7 +411,7 @@ const SHAPE_DEFS={
 function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id; }
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
-let siteName='', sessionId=null;
+let siteName='', siteAddr='', sessionId=null;
 function blankWindow(){ return {photo:null,location:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[]}; }
 const $=s=>document.querySelector(s);
 
@@ -409,7 +420,7 @@ const LS={
   get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
 };
-function autosave(){ LS.set('kcc_current',{site:siteName,sessionId,windows,draft:current,ts:Date.now()}); }
+function autosave(){ LS.set('kcc_current',{site:siteName,addr:siteAddr,sessionId,windows,draft:current,ts:Date.now()}); }
 
 /* 사진 압축 (저장공간 절약 + AI 전송 속도) */
 function compressImage(dataUrl,maxW,q){
@@ -564,6 +575,32 @@ LOCATIONS.forEach(name=>{
 $('#locInput').addEventListener('input',e=>{ current.location=e.target.value.trim();
   document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel')); autosave(); });
 $('#siteInput').addEventListener('input',e=>{ siteName=e.target.value.trim(); autosave(); });
+
+/* 도로명주소 검색 (다음 우편번호 서비스) */
+$('#addrBtn').addEventListener('click',()=>{
+  if(typeof daum==='undefined' || !daum.Postcode){ toast('주소 검색은 인터넷 연결 시 사용돼요'); return; }
+  new daum.Postcode({ oncomplete:function(data){
+    siteAddr = data.roadAddress || data.jibunAddress || data.address || '';
+    const line=$('#addrLine'); line.textContent='📍 '+siteAddr; line.style.display='';
+    autosave();
+  }}).open();
+});
+
+/* 저장하기 (실측 화면) */
+$('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('기기에 저장됨 ✓'); });
+
+/* 새 실측(초기화) */
+function startNewSession(){
+  siteName=''; siteAddr=''; sessionId=null; windows=[]; current=blankWindow();
+  $('#siteInput').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
+  expandedIdx=-1; loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
+}
+$('#newBtn').addEventListener('click',()=>{
+  if(windows.length || current.location || current.w){
+    if(!confirm('현재 실측을 저장했나요?\n새로 시작하면 이 화면이 비워집니다.')) return;
+  }
+  startNewSession(); toast('새 실측 시작');
+});
 
 /* ===== 탭 전환 ===== */
 let expandedIdx=-1;
@@ -826,11 +863,13 @@ $('#nextBtn').addEventListener('click',()=>{
 });
 
 /* 세션 확정 저장 (기기) */
-function commitSession(){
+function commitSession(includeDraft){
+  const all=[...windows];
+  if(includeDraft && current.location && current.w && current.h) all.push(JSON.parse(JSON.stringify(current)));
   if(!siteName){ toast('상단에 현장/고객명을 입력하세요'); return false; }
-  if(windows.length===0){ toast('저장할 창이 없어요'); return false; }
+  if(all.length===0){ toast('저장할 창이 없어요'); return false; }
   const saved=LS.get('kcc_saved')||[]; const id=sessionId||('s'+Date.now());
-  const rec={id,site:siteName,ts:Date.now(),windows:JSON.parse(JSON.stringify(windows))};
+  const rec={id,site:siteName,addr:siteAddr,ts:Date.now(),windows:all};
   const idx=saved.findIndex(x=>x.id===id); if(idx>=0)saved[idx]=rec; else saved.unshift(rec);
   if(!LS.set('kcc_saved',saved)){ toast('저장 공간 부족 — 불러오기에서 오래된 실측을 삭제하세요'); return false; }
   sessionId=id; return true;
@@ -873,13 +912,14 @@ function openLoad(){
   const list=$('#loadList'); list.innerHTML='';
   saved.forEach(rec=>{ const d=document.createElement('div'); d.className='load-item';
     const date=new Date(rec.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});
-    d.innerHTML=`<div class="li-main" data-id="${rec.id}"><b>${rec.site||'(현장명 없음)'}</b><span>창 ${rec.windows.length}개 · ${date}</span></div><button class="li-del" data-del="${rec.id}">삭제</button>`;
+    d.innerHTML=`<div class="li-main" data-id="${rec.id}"><b>${rec.site||'(현장명 없음)'}</b><span>${rec.addr?'📍'+rec.addr+' · ':''}창 ${rec.windows.length}개 · ${date}</span></div><button class="li-del" data-del="${rec.id}">삭제</button>`;
     list.appendChild(d); });
   $('#loadOverlay').classList.add('show');
 }
 function loadSession(id){
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===id); if(!rec)return;
-  siteName=rec.site; $('#siteInput').value=siteName; sessionId=rec.id;
+  siteName=rec.site; siteAddr=rec.addr||''; $('#siteInput').value=siteName; sessionId=rec.id;
+  const line=$('#addrLine'); if(siteAddr){ line.textContent='📍 '+siteAddr; line.style.display=''; } else line.style.display='none';
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
   loadIntoForm(current); renderTray(); autosave();
   $('#loadOverlay').classList.remove('show');
@@ -894,8 +934,7 @@ $('#loadList').addEventListener('click',e=>{
   if(main){ loadSession(main.dataset.id); }
 });
 $('#newSessionBtn').addEventListener('click',()=>{
-  siteName=''; $('#siteInput').value=''; sessionId=null; windows=[]; current=blankWindow();
-  loadIntoForm(current); renderTray(); autosave(); $('#loadOverlay').classList.remove('show'); switchTab('measure'); toast('새 실측 시작');
+  startNewSession(); $('#loadOverlay').classList.remove('show'); toast('새 실측 시작');
 });
 $('#closeLoad').addEventListener('click',()=>$('#loadOverlay').classList.remove('show'));
 $('#loadOverlay').addEventListener('click',e=>{ if(e.target===$('#loadOverlay')) $('#loadOverlay').classList.remove('show'); });
@@ -906,7 +945,8 @@ $('#loadOverlay').addEventListener('click',e=>{ if(e.target===$('#loadOverlay'))
   const r=LS.get('kcc_current');
   const hasWork = r && ((r.windows&&r.windows.length) || (r.draft&&r.draft.location) || (r.draft&&r.draft.data&&Object.keys(r.draft.data).length) || r.site);
   if(hasWork){
-    siteName=r.site||''; $('#siteInput').value=siteName; sessionId=r.sessionId||null;
+    siteName=r.site||''; siteAddr=r.addr||''; $('#siteInput').value=siteName; sessionId=r.sessionId||null;
+    if(siteAddr){ const line=$('#addrLine'); line.textContent='📍 '+siteAddr; line.style.display=''; }
     windows=r.windows||[]; current=r.draft||blankWindow();
     loadIntoForm(current); renderTray();
     setTimeout(()=>toast('이전 작업을 복구했어요'),300);
