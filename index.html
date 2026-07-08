@@ -262,12 +262,12 @@
     <div><div class="eyebrow">KCC글라스 · 현장 실측</div><h1>실측 작업</h1></div>
     <div class="conn"><div class="dot" id="dot"></div><div class="ct"><b id="connState">미연결</b>측정기</div><button class="btn sm" id="connectBtn">연결</button></div>
   </header>
-  <div class="site-bar">
-    <input class="site-input" id="siteInput" placeholder="현장/고객명 (예: 래미안 101-1502)">
-    <button class="btn sm ghost" id="addrBtn">🔍 주소</button>
+  <div class="site-bar" style="gap:7px">
+    <input class="site-input" id="siteInput" placeholder="고객명" style="flex:1">
+    <input class="site-input" id="custPhone" placeholder="연락처" style="flex:1" inputmode="tel">
   </div>
+  <button class="btn sm ghost" id="addrBtn" style="width:100%;margin-top:7px">🔍 주소 검색</button>
   <div class="addr-line" id="addrLine" style="display:none"></div>
-  <input class="site-input" id="siteDetail" placeholder="상세주소 (예: 101동 1502호)" style="margin-top:7px;width:100%">
   <div class="toolbar-top">
     <button id="saveTopBtn">💾 저장</button>
     <button id="loadBtn">📂 불러오기</button>
@@ -328,12 +328,7 @@
 <div class="card">
   <div class="step-h"><span class="step-n">5</span><h2>6포인트 실측</h2><span class="opt" id="measOpt">0 / 6</span></div>
   <svg class="diagram" id="diagram" viewBox="0 0 360 300" role="img" aria-label="창호 실측 도면"></svg>
-  <div class="measure-hint" id="measureHint">칸을 탭하고 측정기 버튼을 누르세요</div>
   <div class="ratio-tag" id="ratioTag"></div>
-  <div style="display:flex;gap:8px;margin-top:11px">
-    <button class="btn ghost sm" id="manualBtn" style="flex:1">직접 입력</button>
-    <button class="btn ghost sm" id="simBtn" style="flex:1">시뮬레이션</button>
-  </div>
   <div class="size-block">
     <div class="size-grid">
       <div class="size-box" data-field="w"><label>넓이 W</label><div class="sv" id="wVal">—</div><div class="su">mm</div></div>
@@ -388,6 +383,13 @@
   <button class="btn close" id="closeSheet">닫기</button>
 </div></div>
 
+<div class="overlay" id="detailOverlay"><div class="sheet">
+  <h3>상세주소 입력</h3>
+  <div class="lead" id="detailRoad"></div>
+  <input class="site-input" id="detailInput" placeholder="동/호" style="width:100%;margin-bottom:10px">
+  <button class="btn close" id="detailDone" style="width:100%">확인</button>
+</div></div>
+
 <div class="overlay" id="loadOverlay"><div class="sheet">
   <h3>저장된 실측</h3><div class="lead" id="loadLead"></div><div id="loadList"></div>
   <button class="btn close" id="newSessionBtn" style="background:var(--laser-deep)">+ 새 실측 시작</button>
@@ -437,7 +439,7 @@ const SHAPE_DEFS={
 function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id; }
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
-let siteName='', siteAddr='', siteDetail='', sessionId=null;
+let siteName='', custPhone='', siteAddr='', siteBuilding='', siteDetail='', sessionId=null, editingIndex=null;
 function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[]}; }
 const $=s=>document.querySelector(s);
 
@@ -446,7 +448,7 @@ const LS={
   get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
 };
-function autosave(){ LS.set('kcc_current',{site:siteName,addr:siteAddr,detail:siteDetail,sessionId,windows,draft:current,ts:Date.now()}); }
+function autosave(){ LS.set('kcc_current',{site:siteName,phone:custPhone,addr:siteAddr,building:siteBuilding,detail:siteDetail,sessionId,windows,draft:current,ts:Date.now()}); }
 
 /* 사진 압축 (저장공간 절약 + AI 전송 속도) */
 function compressImage(dataUrl,maxW,q){
@@ -608,26 +610,42 @@ $('#productChips').addEventListener('click',e=>{ const b=e.target.closest('[data
   current.product = current.product===b.dataset.product?'':b.dataset.product; renderProduct(); autosave(); });
 
 $('#siteInput').addEventListener('input',e=>{ siteName=e.target.value.trim(); autosave(); });
-$('#siteDetail').addEventListener('input',e=>{ siteDetail=e.target.value.trim(); autosave(); });
+$('#custPhone').addEventListener('input',e=>{ custPhone=e.target.value.trim(); autosave(); });
 
-/* 도로명주소 검색 (다음 우편번호 서비스) */
+/* 전체주소 표시 */
+function showFullAddr(){
+  const line=$('#addrLine');
+  if(!siteAddr && !siteDetail){ line.style.display='none'; return; }
+  line.textContent='📍 '+[siteAddr,siteDetail].filter(Boolean).join(' ');
+  line.style.display='';
+}
+/* 도로명주소 검색 → 동/호 입력 시트 → 전체주소 */
 $('#addrBtn').addEventListener('click',()=>{
   if(typeof daum==='undefined' || !daum.Postcode){ toast('주소 검색은 인터넷 연결 시 사용돼요'); return; }
   new daum.Postcode({ oncomplete:function(data){
     siteAddr = data.roadAddress || data.jibunAddress || data.address || '';
-    const line=$('#addrLine'); line.textContent='📍 '+siteAddr; line.style.display='';
-    autosave();
+    siteBuilding = data.buildingName || '';
+    $('#detailRoad').textContent = '📍 '+siteAddr + (siteBuilding?` (${siteBuilding})`:'');
+    $('#detailInput').value = siteDetail || '';
+    $('#detailOverlay').classList.add('show');
+    setTimeout(()=>$('#detailInput').focus(),100);
   }}).open();
 });
+$('#detailDone').addEventListener('click',()=>{
+  siteDetail = $('#detailInput').value.trim();
+  showFullAddr(); autosave();
+  $('#detailOverlay').classList.remove('show');
+});
+$('#detailOverlay').addEventListener('click',e=>{ if(e.target===$('#detailOverlay')) $('#detailOverlay').classList.remove('show'); });
 
 /* 저장하기 (실측 화면) */
 $('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('기기에 저장됨 ✓'); });
 
 /* 새 실측(초기화) */
 function startNewSession(){
-  siteName=''; siteAddr=''; siteDetail=''; sessionId=null; windows=[]; current=blankWindow();
-  $('#siteInput').value=''; $('#siteDetail').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
-  expandedIdx=-1; loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
+  siteName=''; custPhone=''; siteAddr=''; siteBuilding=''; siteDetail=''; sessionId=null; editingIndex=null; windows=[]; current=blankWindow();
+  $('#siteInput').value=''; $('#custPhone').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
+  expandedIdx=-1; loadIntoForm(current); setActive('W1'); renderTray(); autosave(); switchTab('measure');
 }
 $('#newBtn').addEventListener('click',()=>{
   if(windows.length || current.location || current.w){
@@ -748,19 +766,14 @@ $('#sideLeft').addEventListener('click',()=>selectSide('좌'));
 $('#sideRight').addEventListener('click',()=>selectSide('우'));
 
 /* ===== 4 측정 ===== */
-function setActive(id){
-  activeId=id;
-  if(id) $('#measureHint').innerHTML=`<b>${labelOf(id)}</b> 측정 대기 — 버튼을 누르세요`;
-  else $('#measureHint').textContent = filledCount()===getOrder().length?'실측 완료 ✓':'칸을 탭하고 측정하세요';
-  refresh();
-}
+const floor5 = v => (v==null||isNaN(v)) ? v : Math.floor(v/5)*5;   // 5mm 단위 반내림
+
+function setActive(id){ activeId=id; refresh(); }
 function record(mm){
   if(!activeId){ const n=nextEmpty(); if(!n){toast('실측이 모두 찼어요');return;} activeId=n; }
   current.data[activeId]=mm; log(`${labelOf(activeId)} = ${mm} mm`);
   activeId=null; computeSize();
-  const n=nextEmpty(); activeId=n;
-  if(n) $('#measureHint').innerHTML=`<b>${labelOf(n)}</b> 측정 대기 — 버튼을 누르세요`;
-  else $('#measureHint').textContent='실측 완료 ✓';
+  activeId=nextEmpty();
   refresh();
 }
 function renderSizeDisplay(){
@@ -771,21 +784,21 @@ function renderSizeDisplay(){
 function computeSize(){
   const w=['W1','W2','W3'].filter(id=>id in current.data).map(id=>current.data[id]);
   const h=['H1','H2','H3'].filter(id=>id in current.data).map(id=>current.data[id]);
-  if(w.length){ current.w=Math.min(...w); }
-  if(h.length){ current.h=Math.min(...h); }
-  if('V' in current.data){ current.v=current.data['V']; }
+  if(w.length){ current.w=floor5(Math.min(...w)); }
+  if(h.length){ current.h=floor5(Math.min(...h)); }
+  if('V' in current.data){ current.v=floor5(current.data['V']); }
   renderSizeDisplay();
   const m=[];
-  if(w.length)m.push(`W 최소 ${Math.min(...w)} · 편차 ${Math.max(...w)-Math.min(...w)}mm`);
-  if(h.length)m.push(`H 최소 ${Math.min(...h)} · 편차 ${Math.max(...h)-Math.min(...h)}mm`);
-  if('V' in current.data)m.push(`벤트 V ${current.data['V']}mm`);
-  $('#sizeMeta').textContent=m.length?m.join('  /  '):'W·H는 3점 최소값 자동 제안. 작은 창은 칸을 탭해 직접 입력하세요.';
+  if(w.length)m.push(`W 최소 ${Math.min(...w)} → 확정 ${current.w}`);
+  if(h.length)m.push(`H 최소 ${Math.min(...h)} → 확정 ${current.h}`);
+  if('V' in current.data)m.push(`V ${current.v}`);
+  $('#sizeMeta').textContent=m.length?m.join(' / ')+' (5mm 반내림)':'W·H는 3점 최소값을 5mm 반내림해 자동 제안. 확정칸을 길게 눌러 직접 입력.';
 }
 
 /* ── 커스텀 숫자 키패드 ── */
 let kpTarget=null, kpBuf='0';
 function openKeypad(field){
-  kpTarget=field; kpBuf='0';                       // 항상 0 디폴트
+  kpTarget=field; kpBuf='0';
   $('#kpLabel').textContent = field==='w'?'넓이 W':field==='h'?'높이 H':'벤트 V';
   $('#kpVal').textContent=kpBuf;
   $('#kpOverlay').classList.add('show');
@@ -798,7 +811,7 @@ $('#kpGrid').addEventListener('click',e=>{
   $('#kpVal').textContent=kpBuf;
 });
 $('#kpDone').addEventListener('click',()=>{
-  const val=parseInt(kpBuf)||0;
+  const val=floor5(parseInt(kpBuf)||0);
   current[kpTarget]= val||null;
   if(kpTarget==='v'){ if(val) current.data['V']=val; else delete current.data['V']; }
   renderSizeDisplay(); renderDiagram(); updateRatioTag(); updateMeasCount(); autosave();
@@ -821,13 +834,6 @@ $('#diagram').addEventListener('click',e=>{
   if(id in current.data){ delete current.data[id]; computeSize(); }
   setActive(id);
 });
-$('#manualBtn').addEventListener('click',()=>{
-  const id=activeId||nextEmpty(); if(!id){toast('빈 칸이 없어요');return;}
-  const v=prompt(`${labelOf(id)} 측정값 (mm)`,''); if(v===null)return;
-  const mm=parseInt(v); if(isNaN(mm)){toast('숫자를 입력하세요');return;}
-  activeId=id; record(mm);
-});
-$('#simBtn').addEventListener('click',()=>record(1480+Math.floor(Math.random()*900)+Math.floor(Math.random()*7)-3));
 
 /* ===== BLE ===== */
 async function connect(){
@@ -893,33 +899,37 @@ function loadIntoForm(win){
   computeSize(); refresh();
 }
 
-/* 완료된 창 다시 수정 */
+/* 완료된 창 다시 수정/재실측 — 순번(자리) 유지 */
 function editWindow(i){
   const win=windows[i]; if(!win)return;
-  if(current.location&&current.w&&current.h) windows.push(JSON.parse(JSON.stringify(current))); // 작성 중이던 창 보존
+  editingIndex=i;                       // 저장 시 이 자리로 되돌림
   windows.splice(i,1);
   current=JSON.parse(JSON.stringify(win)); activeId=null;
   loadIntoForm(current); renderTray(); autosave(); switchTab('measure');
   window.scrollTo({top:0,behavior:'smooth'});
-  toast('이 창 재측정 중 — 끝나면 "다음 창"으로 저장');
+  toast(`${i+1}번 창 수정/재실측 중 — 확정하면 같은 순번으로 저장됩니다`);
 }
 
 function resetForm(){
-  current=blankWindow(); activeId=null;
+  current=blankWindow(); activeId=null; editingIndex=null;
   const box=$('#photoBox'); const img=box.querySelector('img'); if(img)img.remove();
   $('#photoPlaceholder').style.display=''; $('#retake').style.display='none'; box.classList.remove('has'); $('#aiBtn').disabled=true;
   $('#locInput').value=''; $('#locOpt').textContent=''; document.querySelectorAll('.loc-chip').forEach(x=>x.classList.remove('sel'));
   renderProduct();
   current.w=null;current.h=null;current.v=null; renderSizeDisplay();
-  $('#sizeMeta').textContent='W·H는 3점 최소값 자동 제안. 확정칸을 길게 눌러 직접 입력하세요.';
-  selectShape('2W'); selectSide('좌'); setActive(null);
+  $('#sizeMeta').textContent='W·H는 3점 최소값을 5mm 반내림해 자동 제안. 확정칸을 길게 눌러 직접 입력.';
+  selectShape('2W'); selectSide('좌');
+  setActive('W1');                      // 새 창은 자동으로 W1 활성(깜빡)
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function saveCurrentWindow(){
   if(!current.location){ toast('설치 위치를 입력하세요'); return false; }
   if(!current.w||!current.h){ toast('확정 사이즈를 입력하세요 (칸을 길게 누르면 키패드)'); return false; }
   if(isUnbalanced() && !('V' in current.data)){ toast('벤트 V를 측정/입력하세요'); return false; }
-  windows.push(JSON.parse(JSON.stringify(current))); toast(`창 ${windows.length} 저장됨 ✓`); resetForm(); renderTray(); autosave(); return true;
+  const win=JSON.parse(JSON.stringify(current));
+  if(editingIndex!=null){ windows.splice(editingIndex,0,win); const n=editingIndex+1; editingIndex=null; toast(`${n}번 창 수정 저장됨 ✓`); }
+  else { windows.push(win); toast(`창 ${windows.length} 저장됨 ✓`); }
+  resetForm(); renderTray(); autosave(); return true;
 }
 $('#nextBtn').addEventListener('click',saveCurrentWindow);
 $('#confirmNextBtn').addEventListener('click',saveCurrentWindow);
@@ -934,22 +944,26 @@ function genCode(saved){
 /* 세션 확정 저장 (기기) */
 function commitSession(includeDraft){
   const all=[...windows];
-  if(includeDraft && current.location && current.w && current.h) all.push(JSON.parse(JSON.stringify(current)));
-  if(!siteName){ toast('상단에 현장/고객명을 입력하세요'); return false; }
+  if(includeDraft && current.location && current.w && current.h){
+    const win=JSON.parse(JSON.stringify(current));
+    if(editingIndex!=null) all.splice(editingIndex,0,win); else all.push(win);
+  }
+  if(!siteName){ toast('고객명을 입력하세요'); return false; }
   if(all.length===0){ toast('저장할 창이 없어요'); return false; }
   const saved=LS.get('kcc_saved')||[];
   const existing = sessionId ? saved.find(x=>x.id===sessionId) : null;
   const id = sessionId || ('s'+Date.now());
   const code = existing?.code || genCode(saved);
-  const label = `${code} ${siteName}${siteDetail?' '+siteDetail:''}`;
-  const rec={id,code,label,site:siteName,addr:siteAddr,detail:siteDetail,ts:Date.now(),windows:all};
+  const place = siteBuilding || siteAddr || siteName;
+  const label = `${code} ${place}${siteDetail?' '+siteDetail:''}`.trim();
+  const rec={id,code,label,site:siteName,phone:custPhone,addr:siteAddr,building:siteBuilding,detail:siteDetail,ts:Date.now(),windows:all};
   const idx=saved.findIndex(x=>x.id===id); if(idx>=0)saved[idx]=rec; else saved.unshift(rec);
   if(!LS.set('kcc_saved',saved)){ toast('저장 공간 부족 — 불러오기에서 오래된 실측을 삭제하세요'); return false; }
   sessionId=id; return true;
 }
 /* 실측 완료 → 상담 탭 */
 $('#finishBtn').addEventListener('click',()=>{
-  if(current.location&&current.w&&current.h){ windows.push(JSON.parse(JSON.stringify(current))); resetForm(); renderTray(); }
+  if(current.location&&current.w&&current.h){ saveCurrentWindow(); }
   if(!windows.length){ toast('측정된 창이 없어요'); return; }
   expandedIdx = windows.length?0:-1;
   switchTab('consult');
@@ -991,14 +1005,14 @@ function openLoad(){
 }
 function loadSession(id){
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===id); if(!rec)return;
-  siteName=rec.site; siteAddr=rec.addr||''; siteDetail=rec.detail||'';
-  $('#siteInput').value=siteName; $('#siteDetail').value=siteDetail; sessionId=rec.id;
-  const line=$('#addrLine'); if(siteAddr){ line.textContent='📍 '+siteAddr; line.style.display=''; } else line.style.display='none';
+  siteName=rec.site; custPhone=rec.phone||''; siteAddr=rec.addr||''; siteBuilding=rec.building||''; siteDetail=rec.detail||'';
+  $('#siteInput').value=siteName; $('#custPhone').value=custPhone; sessionId=rec.id; editingIndex=null;
+  showFullAddr();
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
   loadIntoForm(current); renderTray(); autosave();
   $('#loadOverlay').classList.remove('show');
   expandedIdx = windows.length?0:-1; switchTab('consult');
-  toast(`'${rec.site}' 불러옴 — 창을 펼쳐 상담/수정하세요`);
+  toast(`'${rec.label||rec.site}' 불러옴 — 창을 펼쳐 상담/수정하세요`);
 }
 function deleteSession(id){ let saved=LS.get('kcc_saved')||[]; saved=saved.filter(x=>x.id!==id); LS.set('kcc_saved',saved); openLoad(); }
 $('#loadBtn').addEventListener('click',openLoad);
@@ -1019,13 +1033,14 @@ $('#loadOverlay').addEventListener('click',e=>{ if(e.target===$('#loadOverlay'))
   const r=LS.get('kcc_current');
   const hasWork = r && ((r.windows&&r.windows.length) || (r.draft&&r.draft.location) || (r.draft&&r.draft.data&&Object.keys(r.draft.data).length) || r.site);
   if(hasWork){
-    siteName=r.site||''; siteAddr=r.addr||''; siteDetail=r.detail||''; $('#siteInput').value=siteName; $('#siteDetail').value=siteDetail; sessionId=r.sessionId||null;
-    if(siteAddr){ const line=$('#addrLine'); line.textContent='📍 '+siteAddr; line.style.display=''; }
+    siteName=r.site||''; custPhone=r.phone||''; siteAddr=r.addr||''; siteBuilding=r.building||''; siteDetail=r.detail||'';
+    $('#siteInput').value=siteName; $('#custPhone').value=custPhone; sessionId=r.sessionId||null;
+    showFullAddr();
     windows=r.windows||[]; current=r.draft||blankWindow();
     loadIntoForm(current); renderTray();
     setTimeout(()=>toast('이전 작업을 복구했어요'),300);
   } else {
-    selectShape('2W'); selectSide('좌'); setActive(null); renderTray();
+    selectShape('2W'); selectSide('좌'); setActive('W1'); renderTray();
   }
 })();
 </script>
