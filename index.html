@@ -212,7 +212,39 @@
   /* 실측 목록 */
   .ml-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--surface-2);cursor:pointer}
   .ml-row:last-child{border-bottom:none}
-  .ml-num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--laser-deep);flex:none;width:22px}
+  .ml-num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--laser-deep);flex:none;width:38px}
+  .ml-sub{padding-left:16px;opacity:.85}
+  .ml-sub .ml-num{color:var(--muted);font-size:11px}
+  .c-frametag{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--laser-deep);margin-left:4px}
+
+  /* 도면 출력 */
+  .draw-overlay{position:fixed;inset:0;background:#fff;z-index:80;display:none;flex-direction:column}
+  .draw-overlay.show{display:flex}
+  .dw-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--hair);background:var(--paper);position:sticky;top:0;z-index:2}
+  .dw-topbar span{font-family:var(--sans);font-weight:700;font-size:15px}
+  .dw-topbar button{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 14px;border-radius:9px;border:1px solid var(--hair);background:var(--surface)}
+  .dw-topbar button#drawPrint{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .dw-sheet{flex:1;overflow:auto;padding:16px;background:#EEF1F1}
+  .dw-head{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:#222;line-height:1.7}
+  .dw-head b{font-family:var(--sans);font-size:15px;display:block;margin-bottom:4px}
+  .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:11px 14px;margin-bottom:14px;font-family:var(--sans);font-size:13px;font-weight:700;color:#111;text-align:center;line-height:1.5}
+  .dw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:12px 10px 10px;break-inside:avoid;text-align:center}
+  .dw-title{font-family:var(--sans);font-size:13px;font-weight:700;color:#111;line-height:1.35}
+  .dw-title span{font-family:var(--mono);font-size:10px;font-weight:500;color:#555}
+  .dw-glass{font-family:var(--mono);font-size:11px;font-weight:700;margin-top:2px}
+  .dw-svg{margin:4px 0}
+  .dw-svg svg{width:100%;max-height:210px}
+  .dw-frame{font-family:var(--mono);font-size:10px;color:#374151;margin-top:2px}
+  .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
+  @media print {
+    body>*{display:none !important}
+    .draw-overlay{display:flex !important;position:static}
+    .dw-noprint{display:none !important}
+    .dw-sheet{overflow:visible;background:#fff;padding:0}
+    .dw-grid{gap:8px}
+    .dw-card{border-color:#999}
+  }
   .ml-txt{flex:1;min-width:0}
   .ml-txt b{font-size:13px;font-weight:600}
   .ml-txt span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -284,8 +316,7 @@
     <input class="site-input" id="siteInput" placeholder="고객명" style="flex:1">
     <input class="site-input" id="custPhone" placeholder="연락처" style="flex:1" inputmode="tel">
   </div>
-  <button class="btn sm ghost" id="addrBtn" style="width:100%;margin-top:7px">🔍 주소 검색</button>
-  <div class="addr-line" id="addrLine" style="display:none"></div>
+  <input class="site-input" id="addrDisplay" placeholder="🔍 주소 검색 (탭하여 검색)" readonly style="width:100%;margin-top:7px;cursor:pointer">
   <div class="toolbar-top">
     <button id="saveTopBtn">💾 저장</button>
     <button id="loadBtn">📂 불러오기</button>
@@ -373,13 +404,22 @@
 <details class="log"><summary>수신 로그 (디버그)</summary><div class="logbody"><pre id="logPre"></pre></div></details>
 
 <div class="actionbar"><div class="inner" id="measBar">
-  <button class="next" id="nextBtn">이 창 저장하고 다음 창 →</button>
-  <button class="finish" id="finishBtn">실측 완료 →</button>
+  <button class="finish" id="finishBtn" style="flex:1">실측 완료 →</button>
 </div>
 <div class="inner" id="consultBar" style="display:none">
   <button class="next" id="backBtn" style="background:transparent;color:var(--ink);border:1px solid var(--hair)">◀ 실측</button>
+  <button class="next" id="drawBtn" style="background:var(--ink);color:#fff">📐 도면</button>
   <button class="finish" id="saveBtn">저장 완료</button>
 </div></div>
+
+<div class="draw-overlay" id="drawOverlay">
+  <div class="dw-topbar dw-noprint">
+    <button id="drawClose">✕ 닫기</button>
+    <span id="drawTitle">도면 출력</span>
+    <button id="drawPrint">🖨 인쇄 / PDF</button>
+  </div>
+  <div class="dw-sheet" id="drawSheet"></div>
+</div>
 
 <div class="kp-overlay" id="kpOverlay">
   <div class="kp-sheet">
@@ -649,17 +689,20 @@ $('#productChips').addEventListener('click',e=>{ const b=e.target.closest('[data
   current.product = current.product===b.dataset.product?'':b.dataset.product; renderProduct(); autosave(); });
 
 $('#siteInput').addEventListener('input',e=>{ siteName=e.target.value.trim(); autosave(); });
-$('#custPhone').addEventListener('input',e=>{ custPhone=e.target.value.trim(); autosave(); });
+$('#custPhone').addEventListener('input',e=>{
+  let v=e.target.value.replace(/[^0-9]/g,'').slice(0,11);
+  let f=v;
+  if(v.length>7) f=v.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3');
+  else if(v.length>3) f=v.replace(/(\d{3})(\d+)/,'$1-$2');
+  e.target.value=f; custPhone=f; autosave();
+});
 
-/* 전체주소 표시 */
+/* 전체주소 표시 (입력칸에) */
 function showFullAddr(){
-  const line=$('#addrLine');
-  if(!siteAddr && !siteDetail){ line.style.display='none'; return; }
-  line.textContent='📍 '+[siteAddr,siteDetail].filter(Boolean).join(' ');
-  line.style.display='';
+  $('#addrDisplay').value = [siteAddr,siteDetail].filter(Boolean).join(' ');
 }
 /* 도로명주소 검색 → 동/호 입력 시트 → 전체주소 */
-$('#addrBtn').addEventListener('click',()=>{
+$('#addrDisplay').addEventListener('click',()=>{
   if(typeof daum==='undefined' || !daum.Postcode){ toast('주소 검색은 인터넷 연결 시 사용돼요'); return; }
   new daum.Postcode({ oncomplete:function(data){
     siteAddr = data.roadAddress || data.jibunAddress || data.address || '';
@@ -683,7 +726,7 @@ $('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('�
 /* 새 실측(초기화) */
 function startNewSession(){
   siteName=''; custPhone=''; siteAddr=''; siteBuilding=''; siteDetail=''; sessionId=null; editingIndex=null; windows=[]; current=blankWindow();
-  $('#siteInput').value=''; $('#custPhone').value=''; $('#addrLine').style.display='none'; $('#addrLine').textContent='';
+  $('#siteInput').value=''; $('#custPhone').value=''; $('#addrDisplay').value='';
   expandedIdx=-1; phase='measuring'; loadIntoForm(current); setActive('W1'); renderTray(); autosave(); switchTab('measure');
 }
 $('#newBtn').addEventListener('click',()=>{
@@ -697,10 +740,10 @@ $('#newBtn').addEventListener('click',()=>{
 let expandedIdx=-1;
 let phase='measuring';   // measuring | consulted
 function updateActionLabels(){
-  const nb=$('#nextBtn'), cb=$('#confirmNextBtn');
-  if(editingIndex!=null){ if(nb)nb.textContent='✓ 수정 완료'; if(cb)cb.textContent='✓ 수정 완료'; }
-  else if(phase==='consulted'){ if(nb)nb.textContent='＋ 창 추가'; if(cb)cb.textContent='＋ 이 창 추가'; }
-  else { if(nb)nb.textContent='다음 →'; if(cb)cb.textContent='✓ 확정하고 다음 창 →'; }
+  const cb=$('#confirmNextBtn'), fb=$('#finishBtn');
+  if(editingIndex!=null){ if(cb)cb.textContent='✓ 수정 완료'; if(fb)fb.textContent='실측 완료 →'; }
+  else if(phase==='consulted'){ if(cb)cb.textContent='＋ 실측 추가'; if(fb)fb.textContent='◀ 상담으로 돌아가기'; }
+  else { if(cb)cb.textContent='✓ 확정하고 다음 창 →'; if(fb)fb.textContent='실측 완료 →'; }
 }
 function switchTab(name){
   const meas=name==='measure';
@@ -710,7 +753,7 @@ function switchTab(name){
   $('#consultBar').style.display=meas?'none':'flex';
   $('#tabMeasure').classList.toggle('sel',meas);
   $('#tabConsult').classList.toggle('sel',!meas);
-  if(meas) updateActionLabels();
+  if(meas){ updateActionLabels(); renderTray(); }
   else { if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); }
 }
 $('#tabMeasure').addEventListener('click',()=>switchTab('measure'));
@@ -729,7 +772,7 @@ function renderConsult(){
     return `<div class="c-card ${open?'open':''}" data-ci="${i}">
       <div class="c-head" data-toggle="${i}">
         <div class="c-icon">${shapeIcon(w.shape)}</div>
-        <div class="c-info"><b>${w.location||'창 '+(i+1)}</b><span>${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''} · ${w.w}×${w.h} · ${specSummary(w)}</span></div>
+        <div class="c-info"><b>[${i+1}] ${w.location||'창'}${w.frame?` <span class="c-frametag">[${i+1}-1] ${w.frame}</span>`:''}</b><span>${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''} · ${w.w}×${w.h} · ${specSummary(w)}</span></div>
         <div class="c-chev">${open?'▾':'▸'}</div>
       </div>${open?consultBody(w,i):''}</div>`;
   }).join('');
@@ -821,6 +864,87 @@ $('#consultList').addEventListener('click',e=>{
   renderConsult(); autosave();
 });
 $('#backBtn').addEventListener('click',()=>switchTab('measure'));
+
+/* ===== 도면 출력 (auto.py 스타일 — 각진 선, 라운딩/끊김 없음) ===== */
+function shapeSplit(w,fx,fy,fw,fh){
+  const def=SHAPE_DEFS[w.shape]||{}; const yT=fy,yB=fy+fh;
+  const vline=x=>`<line x1="${x}" y1="${yT}" x2="${x}" y2="${yB}" stroke="#000" stroke-width="1"/>`;
+  if(def.fix) return '';
+  if(def.pj) return `<polyline points="${fx},${yB} ${fx+fw/2},${yT} ${fx+fw},${yB}" fill="none" stroke="#000" stroke-width="1"/>`;
+  if(def.handle) return `<polyline points="${w.side==='좌'?fx:fx+fw},${yT} ${w.side==='좌'?fx+fw:fx},${fy+fh/2} ${w.side==='좌'?fx:fx+fw},${yB}" fill="none" stroke="#000" stroke-width="1"/>`;
+  if(def.unbalanced){ if(def.triple)return vline(fx+fw*0.2)+vline(fx+fw*0.5)+vline(fx+fw*0.8); return vline(w.side==='좌'?fx+fw*0.3:fx+fw*0.7); }
+  if(w.shape==='2W') return vline(fx+fw*0.5);
+  if(w.shape==='2W12'){ const r=w.side==='좌'?1/3:2/3; return vline(fx+fw*r); }
+  let s=''; (def.div||[]).forEach(r=>s+=vline(fx+fw*r)); return s;
+}
+function bigDiagramSVG(w){
+  const ded=tongbaDeduct(w);
+  const netW=Math.max(1,(w.w||0)-ded.W), netH=Math.max(1,(w.h||0)-ded.H);
+  const rw=(w.w?netW:1), rh=(w.h?netH:1);
+  const availW=150, availH=140, cx=170, cy=95;
+  let fw,fh;
+  if(w.w&&w.h){ const s=Math.min(availW/rw,availH/rh); fw=rw*s; fh=rh*s; } else {fw=availW*0.6;fh=availH*0.8;}
+  fw=Math.max(40,Math.min(fw,availW)); fh=Math.max(40,Math.min(fh,availH));
+  const fx=cx-fw/2, fy=cy-fh/2;
+  const def=SHAPE_DEFS[w.shape]||{};
+  let s=`<svg viewBox="0 0 340 215" shape-rendering="crispEdges">`;
+  const t=w.tongba||{};
+  const band=(x,y,ww,hh,col)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${col}" stroke="#000" stroke-width="0.8"/>`;
+  const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
+  const hlab=(x,y,txt)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" shape-rendering="auto">${txt}</text>`;
+  // 통바 밴드 (좌/우 세로라벨, 상/하 가로라벨)
+  let ox=fx; (t.left||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; ox-=v; s+=band(ox,fy,v,fh,tb.color); s+=vlab(ox+v/2,fy+fh/2,tb.code); });
+  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(oxr,fy,v,fh,tb.color); s+=vlab(oxr+v/2,fy+fh/2,tb.code); oxr+=v; });
+  let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code); });
+  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code); oyb+=v; });
+  // 프레임 (각진, 흰 배경)
+  const hasScreen=(w.options||[]).some(o=>o.includes('방충망'));
+  s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="#fff" stroke="#000" stroke-width="1.5"/>`;
+  // 분할선/형태
+  s+=shapeSplit(w,fx,fy,fw,fh);
+  // Fix
+  if(def.fix) s+=`<text x="${cx}" y="${fy+fh/2}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="13" font-weight="700" shape-rendering="auto">Fix</text>`;
+  // 벤트 방향 (▶좌 / ◀우) + 망 + V
+  if(def.side){
+    const vx = w.side==='좌'? fx+fw*0.25 : fx+fw*0.75;
+    if(hasScreen) s+=`<text x="${vx}" y="${fy+fh/2-14}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+    s+=`<text x="${vx}" y="${fy+fh/2}" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" shape-rendering="auto">${w.side==='우'?'◀':'▶'} ${w.side}</text>`;
+    if('V' in w.data) s+=`<text x="${vx}" y="${fy+fh/2+13}" text-anchor="middle" font-family="monospace" font-size="9" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
+  } else if(hasScreen && !def.fix){
+    s+=`<text x="${cx}" y="${fy+13}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+  }
+  // 사이즈 (파랑, 순치수)
+  const sizeTxt = (ded.W||ded.H) ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
+  s+=`<text x="${cx}" y="205" text-anchor="middle" font-family="monospace" font-size="12" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+  s+='</svg>';
+  return s;
+}
+function glassColor(g){ if(!g)return '#111'; if(g.includes('미스트'))return '#DC2626'; if(g.includes('로이'))return '#1D4ED8'; return '#111'; }
+function drawCard(w,i){
+  const gl=GLASS.find(x=>x.id===w.glass); const gtxt=gl?gl.label:'';
+  const col=[w.colorIn&&('내 '+w.colorIn),w.colorOut&&('외 '+w.colorOut)].filter(Boolean).join(' / ');
+  const typeLabel = shapeLabel(w.shape)+((SHAPE_DEFS[w.shape]||{}).unbalanced?'(U/B)':'');
+  return `<div class="dw-card">
+    <div class="dw-title">[${i+1}] ${w.location||'창'}<br><span>${w.product||''} / ${typeLabel}</span></div>
+    ${gtxt?`<div class="dw-glass" style="color:${glassColor(gtxt)}">${gtxt}${col?' · '+col:''}</div>`:''}
+    <div class="dw-svg">${bigDiagramSVG(w)}</div>
+    ${w.frame?`<div class="dw-frame">[${i+1}-1] 공틀: ${w.frame}</div>`:''}
+    ${(w.options&&w.options.length)?`<div class="dw-frame">옵션: ${w.options.join(', ')}</div>`:''}
+  </div>`;
+}
+function openDrawing(){
+  if(!windows.length){ toast('출력할 창이 없어요'); return; }
+  const today=new Date().toLocaleDateString('ko-KR');
+  const place=[siteBuilding||siteAddr, siteDetail].filter(Boolean).join(' ');
+  $('#drawSheet').innerHTML=`
+    <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창</div>
+    <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)).join('')}</div>
+    <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.<br>공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
+  $('#drawOverlay').classList.add('show');
+}
+$('#drawBtn').addEventListener('click',openDrawing);
+$('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
+$('#drawPrint').addEventListener('click',()=>window.print());
 
 /* ===== 3 형태 ===== */
 function shapeIcon(id){
@@ -982,15 +1106,17 @@ function renderMeasList(){
   if(!windows.length){ card.style.display='none'; box.innerHTML=''; $('#measListCnt').textContent=''; return; }
   card.style.display=''; $('#measListCnt').textContent=`${windows.length}창`;
   box.innerHTML=windows.map((w,i)=>{ const L=winLine(w);
-    return `<div class="ml-row" data-edit="${i}"><div class="ml-num">${i+1})</div><div class="ml-txt"><b>${L.head}</b><span>${L.dims}</span></div><div class="ml-edit">수정 ›</div></div>`;
+    let html=`<div class="ml-row" data-edit="${i}"><div class="ml-num">[${i+1}]</div><div class="ml-txt"><b>${L.head}</b><span>${L.dims}</span></div><div class="ml-edit">수정 ›</div></div>`;
+    if(w.frame) html+=`<div class="ml-row ml-sub" data-edit="${i}"><div class="ml-num">[${i+1}-1]</div><div class="ml-txt"><b>${w.frame}</b><span>공틀</span></div><div class="ml-edit">수정 ›</div></div>`;
+    return html;
   }).join('');
 }
 function renderTray(){
   const tray=$('#tray'); tray.innerHTML='';
   windows.forEach((w,i)=>{ const d=document.createElement('div'); d.className='chip-done'; d.dataset.edit=i;
-    d.innerHTML=`<div class="n">창 ${i+1} · ${shapeLabel(w.shape)}</div><div class="p">${w.location||'(이름없음)'}</div><div class="s">${w.w||'—'}×${w.h||'—'}</div>`;
+    d.innerHTML=`<div class="n">[${i+1}] · ${shapeLabel(w.shape)}</div><div class="p">${w.location||'(이름없음)'}</div><div class="s">${w.w||'—'}×${w.h||'—'}</div>`;
     tray.appendChild(d); });
-  const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`창 ${windows.length+1} 작업 중`; tray.appendChild(cur);
+  const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`[${windows.length+1}] 작업 중`; tray.appendChild(cur);
   tray.scrollLeft=tray.scrollWidth;
   renderMeasList();
 }
@@ -1045,7 +1171,6 @@ function saveCurrentWindow(){
   else { windows.push(win); toast(`창 ${windows.length} 저장됨 ✓`); }
   resetForm(); renderTray(); autosave(); return true;
 }
-$('#nextBtn').addEventListener('click',saveCurrentWindow);
 $('#confirmNextBtn').addEventListener('click',saveCurrentWindow);
 
 /* 세션 저장코드 생성: YYMMDD + 그날 순번(3자리) */
@@ -1075,8 +1200,9 @@ function commitSession(includeDraft){
   if(!LS.set('kcc_saved',saved)){ toast('저장 공간 부족 — 불러오기에서 오래된 실측을 삭제하세요'); return false; }
   sessionId=id; return true;
 }
-/* 실측 완료 → 상담 탭 */
+/* 실측 완료(→상담) / 상담으로 돌아가기 */
 $('#finishBtn').addEventListener('click',()=>{
+  if(phase==='consulted' && editingIndex==null){ switchTab('consult'); return; }  // 상담으로 복귀
   if(current.location&&current.product&&current.w&&current.h){ if(!saveCurrentWindow()) return; }
   if(!windows.length){ toast('측정된 창이 없어요'); return; }
   phase='consulted';
