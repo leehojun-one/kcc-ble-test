@@ -477,6 +477,79 @@ const TONGBA={
   CB135:{label:'CB135',code:'CB-135',    color:'#FF00FF',deduct:0,  vis:9}
 };
 const FRAMES=['CB90 ㅁ자공틀','CB90 ㄷ자공틀','CB45 ㅁ자공틀','CB45 ㄷ자공틀'];
+
+/* ===================== 견적/상담 데이터 (이미지 기반, 여기만 고치면 됩니다) ===================== */
+// 창종류 → 상담옵션 그룹
+const CONSULT_GROUP={
+  '발코니이중창':'G2','발코니단창':'G2',
+  '공틀일체형단창':'G3','일반단창':'G3','일반이중창':'G3',
+  '고정창':'G4','터닝도어':'G4','PJ창':'G4'
+};
+// 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
+const CONSULT_OPTS={
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['AL','S/ST(BL)','안전망'],opts:[]},
+  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['AL','S/ST(BL)','안전망'],opts:[]}
+};
+const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
+// 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
+const BRANDS=[
+  {id:'kcc_villaz',brand:'KCC홈씨씨완성창',line:'HW_ONE 빌라즈',coef:110},
+  {id:'kcc_5i',    brand:'KCC홈씨씨완성창',line:'HW_5i',      coef:100},
+  {id:'kcc_deal',  brand:'KCC대리점',      line:'프라임',      coef:105},
+  {id:'lx_full',   brand:'LX완성창',       line:'뷰프레임',    coef:130},
+  {id:'lx_deal',   brand:'LX대리점',       line:'뷰프레임',    coef:115},
+  {id:'hanssem',   brand:'한샘',           line:'밀란',        coef:115}
+];
+const LINEUP={
+  '발코니이중창':['HBF251D(V)','T_BF250','VBF250','F_250','F_250S','MHSP_250'],
+  '발코니단창':  ['HBF141S(V)','T_BF135','VBF145','F_140','F_140S','MHSP_130'],
+  '공틀일체형단창':['BF225TM(V)','T_BF225DN','UBF225TM','F_230WF','F_230WS','MHSP_225DN'],
+  '일반이중창':  ['BF230R(V)','T_BF232','VBF230','F_250i','F_250iS','MHSP_232'],
+  '일반단창':    ['BF115R(V)','T_BF118','UBF118','F_130i','F_130iS','MHSP_118'],
+  '고정창':      ['고정창','T_고정창','FIX','FIX','FIX','FIX'],
+  '터닝도어':    ['HDF140(V)','T_DF135','DF140','F_TD140','F_TD140S','MHSP_135'],
+  'PJ창':        ['P/J','T_P/J','PJF60','F_SH60','F_SH60S','MHSP_58']
+};
+// 자평단가 (원)  단위: 자평 / EA / m
+const JAPYEONG_PRICE={
+  '발코니이중창':{p:28000,u:'자평'},'발코니단창':{p:15000,u:'자평'},'공틀일체형단창':{p:13500,u:'자평'},
+  '일반이중창':{p:25000,u:'자평'},'일반단창':{p:12000,u:'자평'},'고정창':{p:8000,u:'자평'},
+  '터닝도어':{p:350000,u:'EA'},'PJ창':{p:15000,u:'자평'}
+};
+const TONGBA_UNIT_PRICE=15000; // 통바 원/m
+function calcJapyeong(w,h){ return Math.max(15, (w*h)/90000); }  // 최소 15자평
+
+/* 시공비 (단위: 만원) */
+const YANGJUNG_FLOORS=['5층이하','6~7','8~9','10~11','12~13','14층','15층','16층','17층','18층','19층','20층','21층','22층','23층','24층','25층'];
+const YANGJUNG_TEUL=['5틀','6~8틀','9~10틀','11~12틀','13~15틀','16틀+'];
+const YANGJUNG_TABLE=[
+  [12,12,12,12,16,21],[13,13,13,13,17,22],[14,14,14,19,19,24],[15,15,15,20,20,25],
+  [16,16,21,21,25,30],[17,22,22,22,27,32],[18,23,23,23,28,33],[19,25,25,30,30,35],
+  [20,26,26,31,37,42],[21,27,27,32,38,43],[22,28,28,33,39,44],[24,30,30,35,41,46],
+  [33,33,39,45,48,53],[36,36,42,48,51,56],[39,39,45,51,54,59],[44,44,50,55,55,65],[47,47,55,55,55,65]
+];
+const CHULGEO_TYPES=['AL','PVC','시스템'];
+const CHULGEO_TABLE=[ // 틀 1~19
+  [21,22,32],[22,24,34],[23,26,36],[24,28,38],[25,30,40],[26,32,42],[27,34,44],[28,36,46],[29,38,48],[30,40,50],
+  [31,42,53],[32,44,56],[33,46,59],[34,48,62],[35,50,65],[36,52,68],[37,54,71],[38,56,74],[39,58,77]
+];
+const ETC_COSTS={ // 기타시공비 (만원)
+  현장관리비:5, 몰딩비:5, 방범창:10, 빨래건조대:5, 터닝재진입비:5, 앵글시공비:0.4, 보양_6틀이하:9, 보양_7틀이상:18
+};
+const REGION_COSTS={ // 시공권역비 (만원)
+  '포천/가평/청평/강화/동두천/웅진/연천':10,'안성/평택':15,
+  '창원/김해':3,'창녕/의령/밀양/함안':8,'거제/사천/진주/통영/고성':10,'함양/남해/산청/울진/영덕':18,'영주/안동/예천/상주/합천/거창/고령':12,
+  '서산/당진/태안/홍성/보령/서천/청양/증평/음성/부여':10,'단양':20
+};
+function yangjungCost(floor,teul){ // floor:숫자, teul:틀수 → 만원
+  let fi=0; const f=floor;
+  if(f<=5)fi=0;else if(f<=7)fi=1;else if(f<=9)fi=2;else if(f<=11)fi=3;else if(f<=13)fi=4;else fi=Math.min(5+(f-14),16);
+  let ti; if(teul<=5)ti=0;else if(teul<=8)ti=1;else if(teul<=10)ti=2;else if(teul<=12)ti=3;else if(teul<=15)ti=4;else ti=5;
+  return (YANGJUNG_TABLE[Math.min(fi,16)]||YANGJUNG_TABLE[16])[ti];
+}
+function chulgeoCost(teul,type){ const ti=Math.max(0,Math.min(teul-1,18)); const ci=CHULGEO_TYPES.indexOf(type); return CHULGEO_TABLE[ti][ci<0?0:ci]; }
+/* =============================================================================================== */
 let selTongba='CB100';
 function tongbaDeduct(w){
   const t=w.tongba||{}; const sum=a=>(a||[]).reduce((s,id)=>s+(TONGBA[id]?TONGBA[id].deduct:0),0);
@@ -512,7 +585,7 @@ function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id;
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 let siteName='', custPhone='', siteAddr='', siteBuilding='', siteDetail='', sessionId=null, editingIndex=null;
-function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:''}; }
+function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'',gap:'',lock:'',screen:'',opts:[]}}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -761,8 +834,13 @@ $('#tabMeasure').addEventListener('click',()=>switchTab('measure'));
 $('#tabConsult').addEventListener('click',()=>{ switchTab('consult'); });
 
 /* ===== 상담 탭 렌더 ===== */
-function specSummary(w){ const g=GLASS.find(x=>x.id===w.glass); const parts=[g?g.label:'유리 미선택'];
-  if(w.options&&w.options.length)parts.push(w.options.length+'옵션'); return parts.join(' · '); }
+function specSummary(w){
+  const sp=w.spec||{}; const parts=[];
+  if(sp.thick)parts.push(sp.thick);
+  if(sp.outer)parts.push(sp.outer);
+  if(sp.color&&sp.color!=='투명')parts.push(sp.color);
+  return parts.length?parts.join(' · '):'세부상담 전';
+}
 function renderConsult(){
   $('#tabConsultCnt').textContent = windows.length?`(${windows.length})`:'';
   const box=$('#consultList');
@@ -777,21 +855,31 @@ function renderConsult(){
       </div>${open?consultBody(w,i):''}</div>`;
   }).join('');
 }
+/* 창종류별 세부상담 (그룹 옵션) */
+function specSection(w,i){
+  const grp=CONSULT_GROUP[w.product];
+  if(!grp) return `<div class="c-sub">세부 상담</div><div class="tb-none">창 종류를 먼저 선택하세요 (실측탭)</div>`;
+  const O=CONSULT_OPTS[grp]; const sp=w.spec||{}; const isDouble=/이중창/.test(w.product);
+  const row=(key)=>{
+    let arr=O[key]; if(!arr||!arr.length) return '';
+    if(key==='lock'&&isDouble) arr=arr.filter(x=>x!=='양방향핸들');   // 이중창 양방향핸들 불가
+    const multi=(key==='opts');
+    const chips=arr.map(o=>{
+      const sel = multi ? (sp[key]||[]).includes(o) : sp[key]===o;
+      return `<button class="spec-chip ${sel?'sel':''}" data-spec="${key}" data-val="${o}" data-multi="${multi?1:0}" data-ci="${i}">${o}</button>`;
+    }).join('');
+    return `<div class="c-sub">${SPEC_LABELS[key]}</div><div class="spec-chips">${chips}</div>`;
+  };
+  return ['thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
+}
 function consultBody(w,i){
   const shapes=SHAPES.map(s=>`<button class="mini-shape ${w.shape===s.id?'sel':''}" data-shapec="${s.id}" data-ci="${i}">${shapeIcon(s.id)}<span>${s.label}</span></button>`).join('');
   const sideRow=(SHAPE_DEFS[w.shape]||{}).side?`<div class="c-sub">${(SHAPE_DEFS[w.shape].handle?'핸들':'주벤트')} 방향</div><div class="side-toggle"><button class="${w.side==='좌'?'sel':''}" data-sidec="좌" data-ci="${i}">좌</button><button class="${w.side==='우'?'sel':''}" data-sidec="우" data-ci="${i}">우</button></div>`:'';
-  const glass=GLASS.map(g=>`<button class="spec-card ${w.glass===g.id?'sel':''}" data-glassc="${g.id}" data-ci="${i}"><b>${g.label}</b><span>${g.desc}</span></button>`).join('');
-  const cin=COLORS.map(c=>`<button class="spec-chip ${w.colorIn===c?'sel':''}" data-cinc="${c}" data-ci="${i}">${c}</button>`).join('');
-  const cout=COLORS.map(c=>`<button class="spec-chip ${w.colorOut===c?'sel':''}" data-coutc="${c}" data-ci="${i}">${c}</button>`).join('');
-  const opt=OPTIONS.map(o=>`<button class="spec-chip opt ${(w.options||[]).includes(o)?'sel':''}" data-optc="${o}" data-ci="${i}">${o}</button>`).join('');
   return `<div class="c-body">
     <div class="c-sub">창 형태 변경</div><div class="mini-shape-grid">${shapes}</div>${sideRow}
     <div class="c-dia-wrap">${winDiagramSVG(w)}</div>
     ${tongbaSection(w,i)}
-    <div class="c-sub">유리 사양</div><div class="spec-grid">${glass}</div>
-    <div class="c-sub">색상 · 내부</div><div class="spec-chips">${cin}</div>
-    <div class="c-sub">색상 · 외부</div><div class="spec-chips">${cout}</div>
-    <div class="c-sub">추가 옵션 (다중)</div><div class="spec-chips">${opt}</div>
+    <div class="c-specwrap">${specSection(w,i)}</div>
   </div>`;
 }
 /* 통바(코너바) 편집 UI */
@@ -849,14 +937,14 @@ $('#consultList').addEventListener('click',e=>{
   const tsel=e.target.closest('[data-tsel]');
   if(tsel){ selTongba=tsel.dataset.tsel; renderConsult(); return; }   // 통바 종류 선택 (창 무관)
   const cel=e.target.closest('[data-ci]'); if(!cel)return; const i=+cel.dataset.ci; const w=windows[i]; if(!w)return;
-  const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]'),gl=e.target.closest('[data-glassc]'),ci=e.target.closest('[data-cinc]'),co=e.target.closest('[data-coutc]'),op=e.target.closest('[data-optc]');
+  const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]');
   const tf=e.target.closest('[data-tface]'),tdel=e.target.closest('[data-tdel]'),fr=e.target.closest('[data-framec]');
+  const sp=e.target.closest('[data-spec]');
   if(sh) w.shape=sh.dataset.shapec;
   else if(sd) w.side=sd.dataset.sidec;
-  else if(gl) w.glass=(w.glass===gl.dataset.glassc)?'':gl.dataset.glassc;
-  else if(ci) w.colorIn=(w.colorIn===ci.dataset.cinc)?'':ci.dataset.cinc;
-  else if(co) w.colorOut=(w.colorOut===co.dataset.coutc)?'':co.dataset.coutc;
-  else if(op){ w.options=w.options||[]; const o=op.dataset.optc,k=w.options.indexOf(o); if(k>=0)w.options.splice(k,1); else w.options.push(o); }
+  else if(sp){ w.spec=w.spec||{}; const key=sp.dataset.spec,val=sp.dataset.val,multi=sp.dataset.multi==='1';
+    if(multi){ w.spec[key]=w.spec[key]||[]; const k=w.spec[key].indexOf(val); if(k>=0)w.spec[key].splice(k,1); else w.spec[key].push(val); }
+    else w.spec[key]=(w.spec[key]===val)?'':val; }
   else if(tf){ w.tongba=w.tongba||{top:[],bottom:[],left:[],right:[]}; (w.tongba[tf.dataset.tface]=w.tongba[tf.dataset.tface]||[]).push(selTongba); }
   else if(tdel){ const [f,idx]=tdel.dataset.tdel.split(':'); if(w.tongba&&w.tongba[f]) w.tongba[f].splice(+idx,1); }
   else if(fr){ w.frame=(w.frame===fr.dataset.framec)?'':fr.dataset.framec; }
@@ -898,7 +986,7 @@ function bigDiagramSVG(w){
   let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code); });
   let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code); oyb+=v; });
   // 프레임 (각진, 흰 배경)
-  const hasScreen=(w.options||[]).some(o=>o.includes('방충망'));
+  const hasScreen=!!(w.spec&&w.spec.screen);
   s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="#fff" stroke="#000" stroke-width="1.5"/>`;
   // 분할선/형태
   s+=shapeSplit(w,fx,fy,fw,fh);
@@ -919,17 +1007,20 @@ function bigDiagramSVG(w){
   s+='</svg>';
   return s;
 }
-function glassColor(g){ if(!g)return '#111'; if(g.includes('미스트'))return '#DC2626'; if(g.includes('로이'))return '#1D4ED8'; return '#111'; }
+function glassColor(g){ if(!g)return '#111'; if(g.includes('미스트')||g.includes('모루'))return '#DC2626'; if(g.includes('로이'))return '#1D4ED8'; return '#1D4ED8'; }
 function drawCard(w,i){
-  const gl=GLASS.find(x=>x.id===w.glass); const gtxt=gl?gl.label:'';
-  const col=[w.colorIn&&('내 '+w.colorIn),w.colorOut&&('외 '+w.colorOut)].filter(Boolean).join(' / ');
+  const sp=w.spec||{};
+  const brandCode = w.brand && LINEUP[w.product] ? LINEUP[w.product][BRANDS.findIndex(b=>b.id===w.brand)] : '';
+  const glassTxt = sp.thick ? `${sp.thick} ${sp.outer||''}${sp.inner&&sp.inner!==sp.outer?' / '+sp.inner:''}` : '';
+  const colorTxt = (sp.color&&sp.color!=='투명')?sp.color:'';
   const typeLabel = shapeLabel(w.shape)+((SHAPE_DEFS[w.shape]||{}).unbalanced?'(U/B)':'');
+  const extras=[]; if(sp.lock)extras.push(sp.lock); if(sp.screen)extras.push('망:'+sp.screen); (sp.opts||[]).forEach(o=>extras.push(o));
   return `<div class="dw-card">
-    <div class="dw-title">[${i+1}] ${w.location||'창'}<br><span>${w.product||''} / ${typeLabel}</span></div>
-    ${gtxt?`<div class="dw-glass" style="color:${glassColor(gtxt)}">${gtxt}${col?' · '+col:''}</div>`:''}
+    <div class="dw-title">[${i+1}] ${w.location||'창'}<br><span>${brandCode||w.product||''} / ${typeLabel}</span></div>
+    ${glassTxt?`<div class="dw-glass" style="color:${glassColor(colorTxt||glassTxt)}">${glassTxt}${colorTxt?' · '+colorTxt:''}</div>`:''}
     <div class="dw-svg">${bigDiagramSVG(w)}</div>
     ${w.frame?`<div class="dw-frame">[${i+1}-1] 공틀: ${w.frame}</div>`:''}
-    ${(w.options&&w.options.length)?`<div class="dw-frame">옵션: ${w.options.join(', ')}</div>`:''}
+    ${extras.length?`<div class="dw-frame">${extras.join(' · ')}</div>`:''}
   </div>`;
 }
 function openDrawing(){
@@ -1218,13 +1309,12 @@ $('#saveBtn').addEventListener('click',()=>{
   const list=$('#sumList'); list.innerHTML='';
   rec.windows.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
     const jub=('V' in w.data)?` · 벤트 ${w.data['V']}`:'';
-    const g=GLASS.find(x=>x.id===w.glass); const gl=g?g.label:'유리 미선택';
-    const col=[w.colorIn&&('내'+w.colorIn),w.colorOut&&('외'+w.colorOut)].filter(Boolean).join('/');
-    const opt=(w.options&&w.options.length)?' · '+w.options.join(','):'';
+    const sp=w.spec||{}; const gl=sp.thick?`${sp.thick} ${sp.outer||''}`:'세부상담 전';
+    const col=(sp.color&&sp.color!=='투명')?' · '+sp.color:'';
     item.innerHTML=`${w.photo?`<img src="${w.photo}">`:'<div class="noimg">NO IMG</div>'}
-      <div class="info"><b>${w.location||'(이름없음)'}</b><span class="tag">${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
+      <div class="info"><b>[${i+1}] ${w.location||'(이름없음)'}</b><span class="tag">${w.product?w.product+' · ':''}${shapeLabel(w.shape)}${(SHAPE_DEFS[w.shape]||{}).side?' · '+w.side:''}</span>
       <span>W ${w.w} × H ${w.h} mm${jub}</span>
-      <span>${gl}${col?' · '+col:''}${opt}</span></div><div class="num">#${i+1}</div>`;
+      <span>${gl}${col}</span></div><div class="num">[${i+1}]</div>`;
     list.appendChild(item); });
   $('#overlay').classList.add('show');
 });
