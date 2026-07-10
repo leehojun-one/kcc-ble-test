@@ -245,6 +245,24 @@
     .dw-grid{gap:8px}
     .dw-card{border-color:#999}
   }
+  /* 견적서 */
+  .q-cond{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+  .q-cond-row{display:flex;gap:12px}
+  .q-cond label{font-family:var(--sans);font-size:13px;font-weight:600;color:#333;flex:1}
+  .q-cond input,.q-cond select{width:100%;margin-top:5px;padding:9px;border:1px solid var(--hair);border-radius:8px;font-family:var(--mono);font-size:14px;background:var(--surface-2)}
+  .q-brandhead{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:8px}
+  .q-badge{border-radius:7px;padding:7px 3px;text-align:center;color:#fff;font-family:var(--sans);font-weight:700;font-size:11px;line-height:1.25}
+  .q-badge small{display:block;font-size:8.5px;font-weight:500;opacity:.9}
+  .q-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;background:#fff}
+  .q-table th,.q-table td{border:1px solid #ddd;padding:6px 4px;text-align:right}
+  .q-table th{background:#F1F3F3;font-weight:700;text-align:center;font-size:10px}
+  .q-table td.q-left{text-align:left;font-family:var(--sans);font-weight:600}
+  .q-table tr.q-mat td{background:#F7FAF8}
+  .q-table tr.q-total td{background:#0B7A3B;color:#fff;font-weight:700;font-size:12px}
+  .q-const{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:12px 14px;margin-top:14px;font-family:var(--mono);font-size:12px;line-height:1.9}
+  .q-const b{font-family:var(--sans)}
+  .q-const .q-crow{display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:2px 0}
+  .q-note{font-family:var(--mono);font-size:10px;color:#888;margin-top:8px;text-align:center}
   .ml-txt{flex:1;min-width:0}
   .ml-txt b{font-size:13px;font-weight:600}
   .ml-txt span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -407,9 +425,10 @@
   <button class="finish" id="finishBtn" style="flex:1">실측 완료 →</button>
 </div>
 <div class="inner" id="consultBar" style="display:none">
-  <button class="next" id="backBtn" style="background:transparent;color:var(--ink);border:1px solid var(--hair)">◀ 실측</button>
+  <button class="next" id="backBtn" style="background:transparent;color:var(--ink);border:1px solid var(--hair);flex:0.7">◀</button>
   <button class="next" id="drawBtn" style="background:var(--ink);color:#fff">📐 도면</button>
-  <button class="finish" id="saveBtn">저장 완료</button>
+  <button class="next" id="quoteBtn" style="background:#0B7A3B;color:#fff">💰 견적</button>
+  <button class="finish" id="saveBtn" style="flex:0.9">저장</button>
 </div></div>
 
 <div class="draw-overlay" id="drawOverlay">
@@ -419,6 +438,24 @@
     <button id="drawPrint">🖨 인쇄 / PDF</button>
   </div>
   <div class="dw-sheet" id="drawSheet"></div>
+</div>
+
+<div class="draw-overlay" id="quoteOverlay">
+  <div class="dw-topbar dw-noprint">
+    <button id="quoteClose">✕ 닫기</button>
+    <span>브랜드별 견적서</span>
+    <button id="quotePrint">🖨 인쇄 / PDF</button>
+  </div>
+  <div class="dw-sheet">
+    <div class="q-cond dw-noprint">
+      <div class="q-cond-row">
+        <label>층수 <input type="number" id="qFloor" inputmode="numeric" value="1" min="1"></label>
+        <label>철거 <select id="qChul"><option>AL</option><option>PVC</option><option>시스템</option></select></label>
+      </div>
+      <label style="display:block;margin-top:8px">시공권역 <select id="qRegion"><option value="">없음(0)</option></select></label>
+    </div>
+    <div id="quoteBody"></div>
+  </div>
 </div>
 
 <div class="kp-overlay" id="kpOverlay">
@@ -487,9 +524,9 @@ const CONSULT_GROUP={
 };
 // 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
 const CONSULT_OPTS={
-  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
-  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['AL','S/ST(BL)','안전망'],opts:[]},
-  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['AL','S/ST(BL)','안전망'],opts:[]}
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]},
+  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]}
 };
 const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
@@ -835,11 +872,8 @@ $('#tabConsult').addEventListener('click',()=>{ switchTab('consult'); });
 
 /* ===== 상담 탭 렌더 ===== */
 function specSummary(w){
-  const sp=w.spec||{}; const parts=[];
-  if(sp.thick)parts.push(sp.thick);
-  if(sp.outer)parts.push(sp.outer);
-  if(sp.color&&sp.color!=='투명')parts.push(sp.color);
-  return parts.length?parts.join(' · '):'세부상담 전';
+  const sp=w.spec||{}; if(!sp.thick) return '세부상담 전';
+  return glassSpecText(w);
 }
 function renderConsult(){
   $('#tabConsultCnt').textContent = windows.length?`(${windows.length})`:'';
@@ -986,8 +1020,12 @@ function bigDiagramSVG(w){
   let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code); });
   let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code); oyb+=v; });
   // 프레임 (각진, 흰 배경)
-  const hasScreen=!!(w.spec&&w.spec.screen);
+  const sp=w.spec||{};
+  const hasScreen=!!(sp.screen&&sp.screen!=='없음');
+  const isMist=(sp.color==='미스트'||sp.color==='모루');
   s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="#fff" stroke="#000" stroke-width="1.5"/>`;
+  // 미스트/모루 색상 표시 (빨강, 상단)
+  if(isMist) s+=`<text x="${cx}" y="${fy+11}" text-anchor="middle" font-family="sans-serif" font-size="8.5" font-weight="700" fill="#DC2626" shape-rendering="auto">${sp.color}</text>`;
   // 분할선/형태
   s+=shapeSplit(w,fx,fy,fw,fh);
   // Fix
@@ -1007,17 +1045,23 @@ function bigDiagramSVG(w){
   s+='</svg>';
   return s;
 }
-function glassColor(g){ if(!g)return '#111'; if(g.includes('미스트')||g.includes('모루'))return '#DC2626'; if(g.includes('로이'))return '#1D4ED8'; return '#1D4ED8'; }
+/* 유리사양 표시 — 미스트/모루 색상이면 '투명' 위치에 반영 (투명+로이 → 미스트+로이) */
+function reflectColor(s,color){ if(!s)return s; if(color==='미스트')return s.replace('투명','미스트'); if(color==='모루')return s.replace('투명','모루'); return s; }
+function glassSpecText(w){
+  const sp=w.spec||{}; if(!sp.thick)return '';
+  const outer=reflectColor(sp.outer,sp.color), inner=reflectColor(sp.inner,sp.color);
+  return `${sp.thick} ${outer||''}${inner&&inner!==outer?' / '+inner:''}`.trim();
+}
+function glassColor(g){ if(!g)return '#1D4ED8'; if(g.includes('미스트')||g.includes('모루'))return '#DC2626'; return '#1D4ED8'; }
 function drawCard(w,i){
   const sp=w.spec||{};
   const brandCode = w.brand && LINEUP[w.product] ? LINEUP[w.product][BRANDS.findIndex(b=>b.id===w.brand)] : '';
-  const glassTxt = sp.thick ? `${sp.thick} ${sp.outer||''}${sp.inner&&sp.inner!==sp.outer?' / '+sp.inner:''}` : '';
-  const colorTxt = (sp.color&&sp.color!=='투명')?sp.color:'';
+  const glassTxt = glassSpecText(w);
   const typeLabel = shapeLabel(w.shape)+((SHAPE_DEFS[w.shape]||{}).unbalanced?'(U/B)':'');
-  const extras=[]; if(sp.lock)extras.push(sp.lock); if(sp.screen)extras.push('망:'+sp.screen); (sp.opts||[]).forEach(o=>extras.push(o));
+  const extras=[]; if(sp.lock)extras.push(sp.lock); if(sp.screen&&sp.screen!=='없음')extras.push('망:'+sp.screen); (sp.opts||[]).forEach(o=>extras.push(o));
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}] ${w.location||'창'}<br><span>${brandCode||w.product||''} / ${typeLabel}</span></div>
-    ${glassTxt?`<div class="dw-glass" style="color:${glassColor(colorTxt||glassTxt)}">${glassTxt}${colorTxt?' · '+colorTxt:''}</div>`:''}
+    ${glassTxt?`<div class="dw-glass" style="color:${glassColor(glassTxt)}">${glassTxt}</div>`:''}
     <div class="dw-svg">${bigDiagramSVG(w)}</div>
     ${w.frame?`<div class="dw-frame">[${i+1}-1] 공틀: ${w.frame}</div>`:''}
     ${extras.length?`<div class="dw-frame">${extras.join(' · ')}</div>`:''}
@@ -1036,6 +1080,65 @@ function openDrawing(){
 $('#drawBtn').addEventListener('click',openDrawing);
 $('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
 $('#drawPrint').addEventListener('click',()=>window.print());
+
+/* ===== 견적서 (브랜드별 비교) ===== */
+const BRAND_COLORS={kcc_villaz:'#0B4DA2',kcc_5i:'#2E7CC4',kcc_deal:'#16386E',lx_full:'#00A651',lx_deal:'#6FB544',hanssem:'#F26F21'};
+const won=n=>Math.round(n).toLocaleString('ko-KR');
+function calcQuote(floor,chulType,region){
+  const rows=windows.map((w,i)=>{
+    const jp=JAPYEONG_PRICE[w.product]; let base=0,unit='-';
+    if(jp){ if(jp.u==='EA'){ base=jp.p; unit='EA'; }
+      else { const jy=calcJapyeong(w.w||0,w.h||0); base=jy*jp.p; unit=jy.toFixed(1)+'자평'; } }
+    const byBrand=BRANDS.map(b=>Math.round(base*b.coef/100));
+    return {i,w,base,unit,byBrand};
+  });
+  // 통바(공통 자재, 계수 미적용)
+  let tLen=0; windows.forEach(w=>{ const t=w.tongba||{};
+    ['left','right'].forEach(f=>(t[f]||[]).forEach(()=>tLen+=(w.h||0)/1000));
+    ['top','bottom'].forEach(f=>(t[f]||[]).forEach(()=>tLen+=(w.w||0)/1000)); });
+  const tongbaCost=Math.round(tLen*TONGBA_UNIT_PRICE);
+  const matByBrand=BRANDS.map((b,bi)=>rows.reduce((s,r)=>s+r.byBrand[bi],0)+tongbaCost);
+  const teul=windows.length;
+  const yang=yangjungCost(Math.max(1,floor||1),teul)*10000;
+  const chul=chulgeoCost(teul,chulType||'AL')*10000;
+  const boyang=(teul<=6?9:18)*10000;
+  const reg=(region&&REGION_COSTS[region]?REGION_COSTS[region]:0)*10000;
+  const constTotal=yang+chul+boyang+reg;
+  const totalByBrand=matByBrand.map(m=>m+constTotal);
+  return {rows,tLen,tongbaCost,matByBrand,yang,chul,boyang,reg,constTotal,totalByBrand,teul};
+}
+function renderQuote(){
+  if(!windows.length){ toast('견적낼 창이 없어요'); return; }
+  const floor=parseInt($('#qFloor').value)||1, chul=$('#qChul').value, region=$('#qRegion').value;
+  const Q=calcQuote(floor,chul,region);
+  const head=`<div class="q-brandhead">${BRANDS.map(b=>`<div class="q-badge" style="background:${BRAND_COLORS[b.id]}">${b.brand.replace('완성창','').replace('KCC홈씨씨','KCC')}<small>${b.line} ·${b.coef}</small></div>`).join('')}</div>`;
+  let table=`<table class="q-table"><tr><th style="text-align:left">창 / 규격</th>${BRANDS.map(b=>`<th>${b.brand.replace('KCC홈씨씨완성창','KCC').replace('완성창','').replace('대리점','대리').replace('홈씨씨','')}<br>${b.line.replace('뷰프레임','뷰').replace('HW_ONE ','')}</th>`).join('')}</tr>`;
+  Q.rows.forEach(r=>{
+    table+=`<tr><td class="q-left">[${r.i+1}] ${r.w.location||'창'}<br><span style="font-family:var(--mono);font-weight:400;color:#888">${r.w.product||''} ${r.w.w}×${r.w.h} · ${r.unit}</span></td>${r.byBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  });
+  if(Q.tongbaCost>0) table+=`<tr><td class="q-left">통바 ${Q.tLen.toFixed(2)}m</td>${BRANDS.map(()=>`<td>${won(Q.tongbaCost)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-mat"><td class="q-left">자재비 합계</td>${Q.matByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-total"><td class="q-left" style="color:#fff">총액 (자재+시공)</td>${Q.totalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  table+='</table>';
+  const cst=`<div class="q-const"><b>시공비 (브랜드 공통)</b>
+    <div class="q-crow"><span>양중비 (${floor}층·${Q.teul}틀)</span><span>${won(Q.yang)}</span></div>
+    <div class="q-crow"><span>철거비 (${Q.teul}틀·${chul})</span><span>${won(Q.chul)}</span></div>
+    <div class="q-crow"><span>보양비</span><span>${won(Q.boyang)}</span></div>
+    ${Q.reg>0?`<div class="q-crow"><span>시공권역비</span><span>${won(Q.reg)}</span></div>`:''}
+    <div class="q-crow" style="border:none;font-weight:700"><span>시공비 합계</span><span>${won(Q.constTotal)}</span></div></div>`;
+  const place=[siteBuilding||siteAddr,siteDetail].filter(Boolean).join(' ');
+  $('#quoteBody').innerHTML=`<div class="dw-head"><b>${siteBuilding||siteName||'현장'} 창호 견적서</b>
+    고객 ${siteName||'—'}${custPhone?' ('+custPhone+')':''}${place?'<br>📍 '+place:''}<br>총 ${Q.teul}창 · ${new Date().toLocaleDateString('ko-KR')}</div>
+    ${head}${table}${cst}
+    <div class="q-note">※ 자재비 = 자평 × 자평단가 × 브랜드계수 / 옵션(로이·간봉·방충망 등) 별도 / 최소 15자평</div>
+    <div class="dw-slogan">공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
+}
+// 권역 옵션 채우기
+BRANDS.length && (function(){ const sel=$('#qRegion'); if(sel) Object.keys(REGION_COSTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=`${k.split('/')[0]}… (${REGION_COSTS[k]}만)`; sel.appendChild(o); }); })();
+$('#quoteBtn').addEventListener('click',()=>{ renderQuote(); $('#quoteOverlay').classList.add('show'); });
+$('#quoteClose').addEventListener('click',()=>$('#quoteOverlay').classList.remove('show'));
+$('#quotePrint').addEventListener('click',()=>window.print());
+['#qFloor','#qChul','#qRegion'].forEach(id=>$(id).addEventListener('input',renderQuote));
 
 /* ===== 3 형태 ===== */
 function shapeIcon(id){
