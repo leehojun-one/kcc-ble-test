@@ -524,9 +524,9 @@ const CONSULT_GROUP={
 };
 // 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
 const CONSULT_OPTS={
-  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
-  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]},
-  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]}
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]},
+  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]}
 };
 const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
@@ -893,18 +893,22 @@ function renderConsult(){
 function specSection(w,i){
   const grp=CONSULT_GROUP[w.product];
   if(!grp) return `<div class="c-sub">세부 상담</div><div class="tb-none">창 종류를 먼저 선택하세요 (실측탭)</div>`;
-  const O=CONSULT_OPTS[grp]; const sp=w.spec||{}; const isDouble=/이중창/.test(w.product);
+  const O=CONSULT_OPTS[grp]; const sp=w.spec||{}; const dbl=isDoubleWin(w.product);
   const row=(key)=>{
     let arr=O[key]; if(!arr||!arr.length) return '';
-    if(key==='lock'&&isDouble) arr=arr.filter(x=>x!=='양방향핸들');   // 이중창 양방향핸들 불가
+    if(key==='lock'&&dbl) arr=arr.filter(x=>x!=='양방향핸들');   // 이중창 양방향핸들 불가
     const multi=(key==='opts');
     const chips=arr.map(o=>{
       const sel = multi ? (sp[key]||[]).includes(o) : sp[key]===o;
       return `<button class="spec-chip ${sel?'sel':''}" data-spec="${key}" data-val="${o}" data-multi="${multi?1:0}" data-ci="${i}">${o}</button>`;
     }).join('');
-    return `<div class="c-sub">${SPEC_LABELS[key]}</div><div class="spec-chips">${chips}</div>`;
+    const lbl = key==='outer' ? (dbl?'외측 유리사양':'유리 사양') : SPEC_LABELS[key];
+    return `<div class="c-sub">${lbl}</div><div class="spec-chips">${chips}</div>`;
   };
-  return ['thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
+  // 단창은 외측만, 이중창은 외측+내측
+  const keys = dbl ? ['thick','outer','inner','color','gap','lock','screen','opts']
+                   : ['thick','outer','color','gap','lock','screen','opts'];
+  return keys.map(row).join('');
 }
 function consultBody(w,i){
   const shapes=SHAPES.map(s=>`<button class="mini-shape ${w.shape===s.id?'sel':''}" data-shapec="${s.id}" data-ci="${i}">${shapeIcon(s.id)}<span>${s.label}</span></button>`).join('');
@@ -1045,12 +1049,19 @@ function bigDiagramSVG(w){
   s+='</svg>';
   return s;
 }
-/* 유리사양 표시 — 미스트/모루 색상이면 '투명' 위치에 반영 (투명+로이 → 미스트+로이) */
+/* 유리사양 표시 — 단창/이중창별 + 미스트/모루 반영 위치 */
+function isDoubleWin(p){ return /이중창/.test(p||''); }
 function reflectColor(s,color){ if(!s)return s; if(color==='미스트')return s.replace('투명','미스트'); if(color==='모루')return s.replace('투명','모루'); return s; }
 function glassSpecText(w){
   const sp=w.spec||{}; if(!sp.thick)return '';
-  const outer=reflectColor(sp.outer,sp.color), inner=reflectColor(sp.inner,sp.color);
-  return `${sp.thick} ${outer||''}${inner&&inner!==outer?' / '+inner:''}`.trim();
+  if(isDoubleWin(w.product)){
+    // 이중창: 외측 그대로, 내측 앞쪽 투명만 미스트/모루
+    const outer=sp.outer||'';
+    const inner=reflectColor(sp.inner,sp.color);
+    return `${sp.thick} ${outer}${inner?' / '+inner:''}`.trim();
+  }
+  // 단창: 외측만, 외측 투명 → 미스트/모루
+  return `${sp.thick} ${reflectColor(sp.outer,sp.color)||''}`.trim();
 }
 function glassColor(g){ if(!g)return '#1D4ED8'; if(g.includes('미스트')||g.includes('모루'))return '#DC2626'; return '#1D4ED8'; }
 function drawCard(w,i){
