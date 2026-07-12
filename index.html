@@ -314,11 +314,12 @@
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
   @page{size:A3 landscape;margin:8mm}
   @media print {
+    /* ★ 모바일 레이아웃 초기화 — 이게 없으면 A3 구석에 몰림 */
+    html,body{max-width:none !important; width:100% !important; margin:0 !important; padding:0 !important; background:#fff !important}
     body>*{display:none !important}
-    .draw-overlay.show{display:flex !important;position:static}
+    .draw-overlay.show{display:block !important; position:static !important; inset:auto !important; width:100% !important; background:#fff !important}
     .dw-noprint{display:none !important}
-    .dw-sheet{overflow:visible;background:#fff;padding:0}
-    .dw-grid{gap:6px}
+    .dw-sheet{overflow:visible !important; background:#fff !important; padding:0 !important; margin:0 auto !important; max-width:none !important; flex:none !important}
     .dw-card{border-color:#999}
     .q-cond{display:none !important}
   }
@@ -1420,9 +1421,12 @@ function applyPaper(){
   st.textContent=`
     @page{size:A3 landscape;margin:${MARGIN}mm}
     @media print{
-      #drawSheet{width:${usableW}mm !important; padding:0 !important; background:#fff !important}
-      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important; gap:3mm !important}
+      html,body{max-width:none !important;width:100% !important;margin:0 !important;padding:0 !important}
+      #drawOverlay{display:block !important;position:static !important;width:100% !important}
+      #drawSheet{width:${usableW}mm !important; max-width:none !important; padding:0 !important; margin:0 !important; background:#fff !important; overflow:visible !important}
+      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important; gap:3mm !important; width:100% !important}
       #drawSheet .dw-headerbar{margin-bottom:3mm !important}
+      #drawSheet .dw-card{page-break-inside:avoid;break-inside:avoid}
     }`;
   const sheet=$('#drawSheet');
   sheet.style.setProperty('--dwzoom', dwZoom);
@@ -1569,8 +1573,11 @@ function applyQuotePaper(){
   st.textContent=`
     @page{size:A4 landscape;margin:10mm}
     @media print{
-      #quoteOverlay .dw-sheet{width:${usableW}mm !important; padding:0 !important; background:#fff !important}
+      html,body{max-width:none !important;width:100% !important;margin:0 !important;padding:0 !important}
+      #quoteOverlay{display:block !important;position:static !important;width:100% !important}
+      #quoteOverlay .dw-sheet{width:${usableW}mm !important; max-width:none !important; padding:0 !important; margin:0 !important; background:#fff !important; overflow:visible !important}
       #quoteOverlay .q-cond{display:none !important}
+      .q-table{width:100% !important}
     }`;
 }
 $('#quotePdf').addEventListener('click',()=>{
