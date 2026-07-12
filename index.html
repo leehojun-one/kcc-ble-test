@@ -255,7 +255,9 @@
   .dw-head b{font-family:var(--sans);font-size:15px;display:block;margin-bottom:4px}
   .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:11px 14px;margin-bottom:14px;font-family:var(--sans);font-size:13px;font-weight:700;color:#111;text-align:center;line-height:1.5}
   .dw-grid{display:grid;grid-template-columns:repeat(var(--dwcols,4),1fr);gap:10px;align-items:start}
-  .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center}
+  .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center;display:flex;flex-direction:column}
+  .dw-card .dw-svg{flex:1;display:flex;align-items:flex-start;justify-content:center}
+  .dw-card .dw-tags{margin-top:auto}
   .dw-title{font-family:var(--sans);font-size:14px;font-weight:700;color:#111;line-height:1.35;min-height:38px}
   .dw-title span{font-family:var(--mono);font-size:11.5px;font-weight:500;color:#555}
   .dw-glass{font-family:var(--mono);font-size:12.5px;font-weight:700;margin-top:2px}
@@ -579,11 +581,11 @@ const CONSULT_GROUP={
 };
 // 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
 const CONSULT_OPTS={
-  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드']},
-  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음']},
-  FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음']},
-  TD:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음']},
-  PJ:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:['없음','롤방충망'],opts:['없음']}
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드','아르곤가스']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
+  FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
+  TD:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음','아르곤가스']},
+  PJ:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:['없음','롤방충망'],opts:['없음','아르곤가스']}
 };
 const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
@@ -668,7 +670,7 @@ const SHAPE_DEFS={
   '2W':{div:[0.5],side:true,sideLabel:'고정문 방향'},
   '2W12':{div:[1/3],lab:['1','2'],side:true,sideLabel:'큰문 방향'},
   '2WU':{unbalanced:true,side:true,sideLabel:'주벤트 방향'},
-  '3W':{div:[1/3,2/3]},
+  '3W':{div:[0.25,0.75]},
   '3WU':{unbalanced:true,triple:true},
   '4W':{div:[0.25,0.5,0.75]},
   'FIX':{fix:true},
@@ -968,7 +970,8 @@ function specSection(w,i){
       const sel = multi ? (sp[key]||[]).includes(o) : sp[key]===o;
       return `<button class="spec-chip ${sel?'sel':''}" data-spec="${key}" data-val="${o}" data-multi="${multi?1:0}" data-ci="${i}">${o}</button>`;
     }).join('');
-    const lbl = key==='outer' ? (dbl?'외측 유리사양':'유리 사양') : SPEC_LABELS[key];
+    let lbl = key==='outer' ? (dbl?'외측 유리사양':'유리 사양') : SPEC_LABELS[key];
+    if(key==='opts') lbl += ' <span style="font-weight:400;opacity:.7">(복수 선택 가능)</span>';
     return `<div class="c-sub">${lbl}</div><div class="spec-chips">${chips}</div>`;
   };
   return ['thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
@@ -1047,8 +1050,17 @@ $('#consultList').addEventListener('click',e=>{
   if(sh){ w.shape=sh.dataset.shapec; if(!(SHAPE_DEFS[w.shape]||{}).unbalanced && w.data) delete w.data['V']; }
   else if(sd) w.side=sd.dataset.sidec;
   else if(sp){ w.spec=w.spec||{}; const key=sp.dataset.spec,val=sp.dataset.val,multi=sp.dataset.multi==='1';
-    if(multi){ w.spec[key]=w.spec[key]||[]; const k=w.spec[key].indexOf(val); if(k>=0)w.spec[key].splice(k,1); else w.spec[key].push(val); }
-    else w.spec[key]=(w.spec[key]===val)?'':val; }
+    if(multi){
+      w.spec[key]=w.spec[key]||[];
+      const arr=w.spec[key], k=arr.indexOf(val);
+      if(val==='없음'){ w.spec[key] = (k>=0) ? [] : ['없음']; }        // '없음' = 배타 선택
+      else {
+        if(k>=0) arr.splice(k,1); else arr.push(val);
+        const n=arr.indexOf('없음'); if(n>=0) arr.splice(n,1);           // 다른 옵션 고르면 '없음' 해제
+      }
+    }
+    else w.spec[key]=(w.spec[key]===val)?'':val;                        // 단일 선택
+  }
   else if(tf){ w.tongba=w.tongba||{top:[],bottom:[],left:[],right:[]}; (w.tongba[tf.dataset.tface]=w.tongba[tf.dataset.tface]||[]).push(selTongba); }
   else if(tdel){ const [f,idx]=tdel.dataset.tdel.split(':'); if(w.tongba&&w.tongba[f]) w.tongba[f].splice(+idx,1); }
   else if(fr){ w.frame=(w.frame===fr.dataset.framec)?'':fr.dataset.framec; }
@@ -1171,7 +1183,7 @@ function bigDiagramSVG(w){
     const hx = w.side==='좌' ? fx+8 : fx+fw-8;
     s+=doorHandle(hx,ym,w.side);
   } else if(w.shape==='3W'||w.shape==='3WU'){           // 3W/3WU: 좌=▶, 우=◀ (텍스트 없음)
-    const r=(w.shape==='3WU')?ubRatio(w):(1/3);
+    const r=(w.shape==='3WU')?ubRatio(w):0.25;
     const lx=fx+fw*(r/2), rx=fx+fw*(1-r/2);
     if(hasScreen){ s+=scr(lx,ym-14); s+=scr(rx,ym-14); }
     s+=sym(lx,ym,'▶'); s+=sym(rx,ym,'◀');
@@ -1240,7 +1252,7 @@ function optionTags(w){
     if(mine.includes(o)) add(o,'dw-tag-add');
     else add(o,'dw-tag-none');
   });
-  return tags.length?`<div class="dw-tags">${tags.join('')}</div>`:'';
+  return `<div class="dw-tags">${tags.length?tags.join(''):'<span class="dw-tag" style="visibility:hidden">-</span>'}</div>`;
 }
 function drawCard(w,i){
   const sp=w.spec||{};
@@ -1284,6 +1296,7 @@ function frameCard(w,i){
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
     <div class="dw-glass">&nbsp;</div>
     <div class="dw-svg">${s}</div>
+    <div class="dw-tags"><span class="dw-tag" style="visibility:hidden">-</span></div>
   </div>`;
 }
 function applyPaper(){
