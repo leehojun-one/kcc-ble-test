@@ -302,15 +302,21 @@
   .dw-exports{display:flex;gap:5px}
   .dw-exports button{font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:9px;border:none;background:var(--ink);color:#fff}
   .dw-exports button:active{opacity:.85}
-  /* 줌 반영 — 카드 자체가 커지고, 넘치면 자동으로 다음 줄 */
+  /* 줌 — 카드가 커지고, 텍스트는 카드 폭에 비례 (SVG와 밸런스 유지) */
   #drawSheet{--dwzoom:1; --dwcard:220px}
-  #drawSheet .dw-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(calc(var(--dwcard) * var(--dwzoom)), 1fr));gap:10px;align-items:start}
-  #drawSheet .dw-card{width:100%}
+  #drawSheet .dw-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(calc(var(--dwcard) * var(--dwzoom)), 1fr));gap:8px;align-items:start}
+  #drawSheet .dw-card{width:100%;container-type:inline-size;padding:7px 6px 6px}
   #drawSheet .dw-svg svg{width:100%;height:auto;display:block}
-  #drawSheet .dw-title{font-size:calc(14px * var(--dwzoom))}
-  #drawSheet .dw-title span{font-size:calc(11.5px * var(--dwzoom))}
-  #drawSheet .dw-glass{font-size:calc(12.5px * var(--dwzoom))}
-  #drawSheet .dw-tag{font-size:calc(10px * var(--dwzoom))}
+  /* 카드 폭 대비 비율 — SVG 텍스트와 동일 스케일감 */
+  #drawSheet .dw-title{font-size:6.4cqw;line-height:1.3;min-height:0}
+  #drawSheet .dw-title span{font-size:5.2cqw}
+  #drawSheet .dw-glass{font-size:5.6cqw;margin-top:1px}
+  #drawSheet .dw-tags{gap:2px;margin-top:3px}
+  #drawSheet .dw-tag{font-size:4.4cqw;padding:1.5px 4px;border-radius:3px}
+  #drawSheet .tsum-h{font-size:5.4cqw}
+  #drawSheet .tsum-table{font-size:5cqw}
+  #drawSheet .tsum-grand{font-size:5.2cqw;padding:5px}
+  #drawSheet .tsum-code{font-size:4.4cqw}
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
   @page{size:A3 landscape;margin:8mm}
   @media print {
@@ -1146,7 +1152,7 @@ function missingSpecs(w){
 /* ===== 도면 출력 (auto.py 스타일 — 각진 선, 라운딩/끊김 없음) ===== */
 /* ===== 도면 렌더 (auto.py 기준) ===== */
 let DRAW_SCALE=1;
-const DW_VIEW={w:340,h:300, availW:300, availH:215, top:32, cx:170};   // 도면 영역(크게)
+const DW_VIEW={w:340,h:252, availW:300, availH:200, top:12, cx:170};   // 도면 영역 (여백 최소화)
 function computeDrawScale(){
   const sumMM=(arr)=>(arr||[]).reduce((s,id)=>s+tbDrawMM(id),0);
   const spanW=w=>{const t=w.tongba||{}; const d=tongbaDeduct(w); return Math.max(0,(w.w||0)-d.W)+sumMM(t.left)+sumMM(t.right);};
@@ -1213,7 +1219,7 @@ function bigDiagramSVG(w){
   fw=Math.max(20,fw); fh=Math.max(20,fh);
   const cx=DW_VIEW.cx, fx=cx-fw/2;
   // ★ 상부면 정렬: 모든 창의 '창틀 상단'을 같은 y에 (통바는 위로 삐져나가되 여백 확보)
-  const MAXTB=14;                       // 상단 통바용 여유 공간
+  const MAXTB=12;                       // 상단 통바용 여유 공간
   const fy=DW_VIEW.top+MAXTB;
   const def=SHAPE_DEFS[w.shape]||{}; const sp=w.spec||{};
   const hasScreen=!!(sp.screen&&sp.screen!=='없음');
@@ -1262,7 +1268,7 @@ function bigDiagramSVG(w){
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const hasDed=(ded.W||ded.H);
   const FT="'Malgun Gothic','맑은 고딕',sans-serif";
-  const Y=DW_VIEW.h-12;
+  const Y=DW_VIEW.h-8;
   if(hasDed){
     // tspan으로 한 줄에: 4810 x 2300 (5000x2300) -190
     const main=`${netW} x ${netH}`;
@@ -1383,7 +1389,7 @@ function frameCard(w,i){
   const netW=Math.max(1,(w.w||0)-ded.W), netH=Math.max(1,(w.h||0)-ded.H);
   let fw=netW*S, fh=netH*S;
   fw=Math.max(20,fw); fh=Math.max(20,fh);
-  const cx=DW_VIEW.cx, fx=cx-fw/2, fy=DW_VIEW.top+14;   // 창 카드와 동일 기준선
+  const cx=DW_VIEW.cx, fx=cx-fw/2, fy=DW_VIEW.top+12;   // 창 카드와 동일 기준선
   const b=Math.max(4,60*1.5*TB_W*S);   // 공틀 밴드 두께
   let s=`<svg viewBox="0 0 ${DW_VIEW.w} ${DW_VIEW.h}" shape-rendering="crispEdges">`;
   // 액자형: 바깥 사각 - 안쪽 사각 (내부 분할선 없음)
@@ -1396,7 +1402,7 @@ function frameCard(w,i){
   }
   s+=`<text x="${cx}" y="${fy+fh/2-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${code}</text>`;
   s+=`<text x="${cx}" y="${fy+fh/2+9}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${isU?'ㄷ자 공틀':'ㅁ자 공틀'}</text>`;
-  s+=`<text x="${cx}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="16" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
+  s+=`<text x="${cx}" y="${DW_VIEW.h-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="16" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
   s+='</svg>';
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
@@ -1424,21 +1430,22 @@ function applyPaper(){
       html,body{max-width:none !important;width:100% !important;margin:0 !important;padding:0 !important}
       #drawOverlay{display:block !important;position:static !important;width:100% !important}
       #drawSheet{width:${usableW}mm !important; max-width:none !important; padding:0 !important; margin:0 !important; background:#fff !important; overflow:visible !important}
-      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important; gap:3mm !important; width:100% !important}
-      #drawSheet .dw-headerbar{margin-bottom:3mm !important}
-      #drawSheet .dw-card{page-break-inside:avoid;break-inside:avoid}
+      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important; gap:2.5mm !important; width:100% !important}
+      #drawSheet .dw-headerbar{margin-bottom:2.5mm !important; padding:2mm !important}
+      #drawSheet .dw-card{page-break-inside:avoid;break-inside:avoid; container-type:inline-size !important}
+      #drawSheet .dw-slogan{margin-top:2.5mm !important; padding:2mm !important}
     }`;
   const sheet=$('#drawSheet');
   sheet.style.setProperty('--dwzoom', dwZoom);
   sheet.style.setProperty('--dwcols', cols);
   $('#dwScaleLabel').textContent=Math.round(dwZoom*100)+'%';
-  // 페이지 수 추정 (카드 높이 ≈ 폭 × 1.45)
+  // 페이지 수 추정 — 카드 높이 ≈ 폭 × 1.05 (여백 축소 반영)
   const total=document.querySelectorAll('#drawSheet .dw-card').length;
   const rows=Math.ceil(total/cols);
-  const rowMM=cardW*1.45+3;
+  const rowMM=cardW*1.05+3;
   const perPage=Math.max(1,Math.floor((usableH-14)/rowMM));
   const pages=Math.max(1,Math.ceil(rows/perPage));
-  $('#dwPageInfo').textContent=`${cols}단 · ${pages}페이지`;
+  $('#dwPageInfo').textContent=`${cols}단 · ${rows}줄 · ${pages}페이지`;
   $('#dwPageInfo').classList.toggle('warn', pages>1);
 }
 $('#dwZoomIn').addEventListener('click',()=>{ dwZoom=Math.min(2.5, +(dwZoom+0.1).toFixed(2)); applyPaper(); });
