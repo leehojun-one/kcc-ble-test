@@ -20,8 +20,8 @@
     --shadow-lg:0 4px 12px rgba(27,37,89,.07), 0 20px 44px -20px rgba(27,37,89,.28);
     --shadow-btn:0 6px 18px -6px rgba(43,78,230,.45);
     --r:18px; --r-sm:12px;
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
-    --sans:'Inter',system-ui,-apple-system,'Malgun Gothic',sans-serif;
+    --mono:'Malgun Gothic','맑은 고딕',ui-monospace,monospace;
+    --sans:'Malgun Gothic','맑은 고딕',system-ui,-apple-system,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{background:var(--paper);color:var(--ink);font-family:var(--sans);overscroll-behavior-y:contain;-webkit-font-smoothing:antialiased}
@@ -253,7 +253,7 @@
   .dw-sheet{flex:1;overflow:auto;padding:16px;background:#EEF1F1}
   .dw-head{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:#222;line-height:1.7}
   .dw-head b{font-family:var(--sans);font-size:15px;display:block;margin-bottom:4px}
-  .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:11px 14px;margin-bottom:14px;font-family:var(--sans);font-size:13px;font-weight:700;color:#111;text-align:center;line-height:1.5}
+  .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:8px 12px;margin-bottom:10px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;text-align:center;line-height:1.4}
   .dw-grid{display:grid;grid-template-columns:repeat(var(--dwcols,4),1fr);gap:10px;align-items:start}
   .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center;display:flex;flex-direction:column}
   .dw-card .dw-svg{flex:1;display:flex;align-items:flex-start;justify-content:center}
@@ -308,15 +308,15 @@
   #drawSheet .dw-card{width:100%;container-type:inline-size;padding:7px 6px 6px}
   #drawSheet .dw-svg svg{width:100%;height:auto;display:block}
   /* 카드 폭 대비 비율 — SVG 텍스트와 동일 스케일감 */
-  #drawSheet .dw-title{font-size:6.4cqw;line-height:1.3;min-height:0}
-  #drawSheet .dw-title span{font-size:5.2cqw}
-  #drawSheet .dw-glass{font-size:5.6cqw;margin-top:1px}
-  #drawSheet .dw-tags{gap:2px;margin-top:3px}
-  #drawSheet .dw-tag{font-size:4.4cqw;padding:1.5px 4px;border-radius:3px}
-  #drawSheet .tsum-h{font-size:5.4cqw}
-  #drawSheet .tsum-table{font-size:5cqw}
-  #drawSheet .tsum-grand{font-size:5.2cqw;padding:5px}
-  #drawSheet .tsum-code{font-size:4.4cqw}
+  #drawSheet .dw-title{font-size:5.4cqw;line-height:1.25;min-height:0}     /* 1순위: 설치위치 */
+  #drawSheet .dw-title span{font-size:3.6cqw;font-weight:500}               /* 제품/형태 (보조) */
+  #drawSheet .dw-glass{font-size:3.8cqw;margin-top:1px}                     /* 유리사양 (보조) */
+  #drawSheet .dw-tags{gap:2px;margin-top:2px}
+  #drawSheet .dw-tag{font-size:3.2cqw;padding:1px 3px;border-radius:3px}    /* 옵션 (최소) */
+  #drawSheet .tsum-h{font-size:4.4cqw}
+  #drawSheet .tsum-table{font-size:3.8cqw}
+  #drawSheet .tsum-grand{font-size:4cqw;padding:4px}
+  #drawSheet .tsum-code{font-size:3.2cqw}
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
   @page{size:A3 landscape;margin:8mm}
   @media print {
@@ -719,7 +719,7 @@ const COLORS=['화이트','그레이','블랙','우드체리','우드오크','�
 const OPTIONS=['방충망','촘촘방충망','안전바','미들바','시스템핸들','자동잠금'];
 
 const SHAPES=[
-  {id:'2W',label:'2W'},{id:'2W12',label:'2W(1:2)'},{id:'2WU',label:'2WU'},{id:'3W',label:'3W'},
+  {id:'2W',label:'2W'},{id:'2W12',label:'2W(1:2)'},{id:'2WU',label:'2WU'},{id:'3W',label:'3W(1:2:1)'},
   {id:'3WU',label:'3WU'},{id:'4W',label:'4W'},{id:'FIX',label:'FIX'},{id:'TD',label:'T/D'},{id:'PJ',label:'PJ'}
 ];
 const SHAPE_DEFS={
@@ -1152,7 +1152,7 @@ function missingSpecs(w){
 /* ===== 도면 출력 (auto.py 스타일 — 각진 선, 라운딩/끊김 없음) ===== */
 /* ===== 도면 렌더 (auto.py 기준) ===== */
 let DRAW_SCALE=1;
-const DW_VIEW={w:340,h:252, availW:300, availH:200, top:12, cx:170};   // 도면 영역 (여백 최소화)
+const DW_VIEW={w:340,h:258, availW:300, availH:198, top:10, cx:170};   // 도면 영역 (여백 최소화)
 function computeDrawScale(){
   const sumMM=(arr)=>(arr||[]).reduce((s,id)=>s+tbDrawMM(id),0);
   const spanW=w=>{const t=w.tongba||{}; const d=tongbaDeduct(w); return Math.max(0,(w.w||0)-d.W)+sumMM(t.left)+sumMM(t.right);};
@@ -1268,17 +1268,17 @@ function bigDiagramSVG(w){
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const hasDed=(ded.W||ded.H);
   const FT="'Malgun Gothic','맑은 고딕',sans-serif";
-  const Y=DW_VIEW.h-8;
+  const Y=DW_VIEW.h-7;
   if(hasDed){
     // tspan으로 한 줄에: 4810 x 2300 (5000x2300) -190
     const main=`${netW} x ${netH}`;
     const orig=`(${w.w}x${w.h})`;
     const dedTxt=[ded.W?`-${ded.W}`:'', ded.H?`-${ded.H}(H)`:'' ].filter(Boolean).join(' ');
-    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${main}` +
-       `<tspan font-size="13.6" font-weight="600" fill="#6B7280" dx="6">${orig}</tspan>` +
-       `<tspan font-size="13.6" font-weight="700" fill="#DC2626" dx="5">${dedTxt}</tspan></text>`;
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${main}` +
+       `<tspan font-size="15" font-weight="600" fill="#6B7280" dx="6">${orig}</tspan>` +
+       `<tspan font-size="15" font-weight="700" fill="#DC2626" dx="5">${dedTxt}</tspan></text>`;
   } else {
-    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${w.w||'—'} x ${w.h||'—'}</text>`;
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${w.w||'—'} x ${w.h||'—'}</text>`;
   }
   s+='</svg>';
   return s;
@@ -1402,7 +1402,7 @@ function frameCard(w,i){
   }
   s+=`<text x="${cx}" y="${fy+fh/2-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${code}</text>`;
   s+=`<text x="${cx}" y="${fy+fh/2+9}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${isU?'ㄷ자 공틀':'ㅁ자 공틀'}</text>`;
-  s+=`<text x="${cx}" y="${DW_VIEW.h-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="16" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
+  s+=`<text x="${cx}" y="${DW_VIEW.h-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
   s+='</svg>';
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
