@@ -241,21 +241,24 @@
   .dw-head{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-family:var(--mono);font-size:12px;color:#222;line-height:1.7}
   .dw-head b{font-family:var(--sans);font-size:15px;display:block;margin-bottom:4px}
   .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:11px 14px;margin-bottom:14px;font-family:var(--sans);font-size:13px;font-weight:700;color:#111;text-align:center;line-height:1.5}
-  .dw-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:12px 10px 10px;break-inside:avoid;text-align:center}
-  .dw-title{font-family:var(--sans);font-size:13px;font-weight:700;color:#111;line-height:1.35}
-  .dw-title span{font-family:var(--mono);font-size:10px;font-weight:500;color:#555}
-  .dw-glass{font-family:var(--mono);font-size:11px;font-weight:700;margin-top:2px}
-  .dw-svg{margin:4px 0}
-  .dw-svg svg{width:100%;max-height:210px}
-  .dw-frame{font-family:var(--mono);font-size:10px;color:#374151;margin-top:2px}
+  .dw-grid{display:grid;grid-template-columns:repeat(var(--dwcols,4),1fr);gap:10px;align-items:start}
+  .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center}
+  .dw-title{font-family:var(--sans);font-size:12px;font-weight:700;color:#111;line-height:1.35}
+  .dw-title span{font-family:var(--mono);font-size:9.5px;font-weight:500;color:#555}
+  .dw-glass{font-family:var(--mono);font-size:10.5px;font-weight:700;margin-top:2px}
+  .dw-svg{margin:2px 0}
+  .dw-svg svg{width:100%;height:auto;display:block}
+  .dw-frame{font-family:var(--mono);font-size:9.5px;color:#374151;margin-top:1px}
+  .dw-opts{display:flex;gap:5px}
+  .dw-opts select{font-family:var(--sans);font-size:12px;font-weight:600;padding:8px 6px;border:1px solid var(--hair);border-radius:8px;background:var(--surface)}
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
+  @page{size:A3 landscape;margin:8mm}
   @media print {
     body>*{display:none !important}
     .draw-overlay{display:flex !important;position:static}
     .dw-noprint{display:none !important}
     .dw-sheet{overflow:visible;background:#fff;padding:0}
-    .dw-grid{gap:8px}
+    .dw-grid{gap:6px}
     .dw-card{border-color:#999}
   }
   /* 견적서 */
@@ -446,7 +449,11 @@
 <div class="draw-overlay" id="drawOverlay">
   <div class="dw-topbar dw-noprint">
     <button id="drawClose">✕ 닫기</button>
-    <span id="drawTitle">도면 출력</span>
+    <div class="dw-opts">
+      <select id="dwPaper"><option value="A4">A4</option><option value="A3" selected>A3</option></select>
+      <select id="dwOrient"><option value="landscape" selected>가로</option><option value="portrait">세로</option></select>
+      <select id="dwCols"><option value="2">2단</option><option value="3">3단</option><option value="4" selected>4단</option></select>
+    </div>
     <button id="drawPrint">🖨 인쇄 / PDF</button>
   </div>
   <div class="dw-sheet" id="drawSheet"></div>
@@ -1051,12 +1058,12 @@ function missingSpecs(w){
 
 /* ===== 도면 출력 (auto.py 스타일 — 각진 선, 라운딩/끊김 없음) ===== */
 /* ===== 도면 렌더 (auto.py 기준) ===== */
-let DRAW_SCALE=1;   // 전체 창 공통 스케일 (px per mm)
+let DRAW_SCALE=1;
+const DW_VIEW={w:340,h:300, availW:300, availH:215, top:32, cx:170};   // 도면 영역(크게)
 function computeDrawScale(){
-  const maxW=Math.max(2500, ...windows.map(w=>(w.w||0)+tongbaDeduct(w).W*0));
+  const maxW=Math.max(2500, ...windows.map(w=>(w.w||0)));
   const maxH=Math.max(2500, ...windows.map(w=>(w.h||0)));
-  const availW=155, availH=138;                       // 카드 내 도면 영역(px)
-  DRAW_SCALE=Math.min(availW/maxW, availH/maxH);
+  DRAW_SCALE=Math.min(DW_VIEW.availW/maxW, DW_VIEW.availH/maxH);
 }
 /* 유리 해칭 (미스트=도트, 모루=세로줄) */
 function glassHatchDefs(){
@@ -1106,60 +1113,56 @@ function bigDiagramSVG(w){
   const netW=Math.max(1,(w.w||0)-ded.W), netH=Math.max(1,(w.h||0)-ded.H);
   const S=DRAW_SCALE;
   let fw=(w.w?netW:1000)*S, fh=(w.h?netH:1000)*S;
-  fw=Math.max(18,fw); fh=Math.max(18,fh);
-  const cx=170, cy=95, fx=cx-fw/2, fy=cy-fh/2;
+  fw=Math.max(20,fw); fh=Math.max(20,fh);
+  const cx=DW_VIEW.cx, fx=cx-fw/2;
+  // ★ 상부면 정렬: 통바 상단까지 포함해 top 기준
+  const topTB=(w.tongba&&w.tongba.top||[]).reduce((s,id)=>s+Math.max(3,tbDrawMM(id)*S),0);
+  const fy=DW_VIEW.top+topTB;
   const def=SHAPE_DEFS[w.shape]||{}; const sp=w.spec||{};
   const hasScreen=!!(sp.screen&&sp.screen!=='없음');
   const isMist=(sp.color==='미스트'), isMoru=(sp.color==='모루');
-  let s=`<svg viewBox="0 0 340 215" shape-rendering="crispEdges">${glassHatchDefs()}`;
+  let s=`<svg viewBox="0 0 ${DW_VIEW.w} ${DW_VIEW.h}" shape-rendering="crispEdges">${glassHatchDefs()}`;
   const t=w.tongba||{};
   const band=(x,y,ww,hh,col)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${col}" stroke="#000" stroke-width="0.8"/>`;
-  const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
-  const hlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
-  // 통바 밴드 (mm 실치수 × 공통스케일)
-  let ox=fx; (t.left||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); ox-=v; s+=band(ox,fy,v,fh,tb.color); s+=vlab(ox+v/2,fy+fh/2,tb.code,tb.tcol); });
-  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); s+=band(oxr,fy,v,fh,tb.color); s+=vlab(oxr+v/2,fy+fh/2,tb.code,tb.tcol); oxr+=v; });
-  let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code,tb.tcol); });
-  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code,tb.tcol); oyb+=v; });
+  const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
+  const hlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
+  const tw=id=>Math.max(3,tbDrawMM(id)*S);
+  let ox=fx; (t.left||[]).forEach(id=>{ const tb=TONGBA[id],v=tw(id); ox-=v; s+=band(ox,fy,v,fh,tb.color); s+=vlab(ox+v/2,fy+fh/2,tb.code,tb.tcol); });
+  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const tb=TONGBA[id],v=tw(id); s+=band(oxr,fy,v,fh,tb.color); s+=vlab(oxr+v/2,fy+fh/2,tb.code,tb.tcol); oxr+=v; });
+  let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=tw(id); oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code,tb.tcol); });
+  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=tw(id); s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code,tb.tcol); oyb+=v; });
   // 유리면 (미스트 도트 / 모루 줄무늬)
   const glassFill = isMist?'url(#mistPat)' : isMoru?'url(#moruPat)' : '#fff';
   s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="${glassFill}" stroke="#000" stroke-width="1.5"/>`;
-  // 분할선/형태
   s+=shapeSplit(w,fx,fy,fw,fh);
-  if(def.fix) s+=`<text x="${cx}" y="${fy+fh/2}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="13" font-weight="700" shape-rendering="auto">Fix</text>`;
-  // 미스트/모루 라벨
-  if(isMist||isMoru) s+=`<text x="${cx}" y="${fy+fh*0.22}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="${isMist?'#DC2626':'#0F766E'}" shape-rendering="auto">${sp.color}</text>`;
+  if(def.fix) s+=`<text x="${cx}" y="${fy+fh/2}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="15" font-weight="700" shape-rendering="auto">Fix</text>`;
+  if(isMist||isMoru) s+=`<text x="${cx}" y="${fy+Math.min(20,fh*0.2)}" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="${isMist?'#DC2626':'#0F766E'}" shape-rendering="auto">${sp.color}</text>`;
   const ym=fy+fh/2;
-  // ── 벤트/핸들/망 표기
-  if(def.handle){                                   // 터닝도어: 핸들 모양
-    const hx = w.side==='좌' ? fx+7 : fx+fw-7;
+  const sym=(x,y,txt,size,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${size||11}" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
+  const scr=(x,y)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+  const vtxt=(x,y)=>('V' in w.data)?`<text x="${x}" y="${y}" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`:'';
+  if(def.handle){                                       // 터닝도어: 핸들 모양
+    const hx = w.side==='좌' ? fx+8 : fx+fw-8;
     s+=doorHandle(hx,ym,w.side);
-  } else if(w.shape==='3W'||w.shape==='3WU'){       // 3W/3WU: 좌·우 주벤트 화살표 + 망
+  } else if(w.shape==='3W'||w.shape==='3WU'){           // 3W/3WU: 좌=▶, 우=◀ (텍스트 없음)
     const lx=fx+fw*0.12, rx=fx+fw*0.88;
-    s+=ventArrow(lx,ym,'left'); s+=ventArrow(rx,ym,'right');
-    if(hasScreen){
-      s+=`<text x="${lx}" y="${ym-12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
-      s+=`<text x="${rx}" y="${ym-12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
-    }
-    if('V' in w.data){
-      s+=`<text x="${lx}" y="${ym+14}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
-      s+=`<text x="${rx}" y="${ym+14}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
-    }
-  } else if(def.side){                              // 2W/2W12/2WU: 주벤트 중앙에 정보
-    // 주벤트 칸의 중앙 X 계산
+    if(hasScreen){ s+=scr(lx,ym-14); s+=scr(rx,ym-14); }
+    s+=sym(lx,ym,'▶'); s+=sym(rx,ym,'◀');
+    s+=vtxt(lx,ym+18); s+=vtxt(rx,ym+18);
+  } else if(def.side){                                  // 2W/2W12/2WU: "▶ 좌" / "◀ 우" (주벤트 중앙)
     let vcx;
     if(w.shape==='2W12'){ const r=w.side==='좌'?1/3:2/3; vcx = w.side==='좌' ? fx+fw*r/2 : fx+fw*(r+1)/2; }
     else if(w.shape==='2WU'){ const r=w.side==='좌'?0.3:0.7; vcx = w.side==='좌' ? fx+fw*r/2 : fx+fw*(r+1)/2; }
     else { vcx = w.side==='좌' ? fx+fw*0.25 : fx+fw*0.75; }
-    if(hasScreen) s+=`<text x="${vcx}" y="${ym-13}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
-    s+=ventArrow(vcx,ym,w.side==='우'?'left':'right');
-    if('V' in w.data) s+=`<text x="${vcx}" y="${ym+15}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
+    if(hasScreen) s+=scr(vcx,ym-14);
+    s+=sym(vcx,ym, w.side==='우'?'◀ 우':'▶ 좌');
+    s+=vtxt(vcx,ym+18);
   } else if(hasScreen && !def.fix){
-    s+=`<text x="${cx}" y="${fy+12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+    s+=scr(cx,fy+14);
   }
-  // 사이즈 (파랑, 순치수)
+  // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const sizeTxt = (ded.W||ded.H) ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
-  s+=`<text x="${cx}" y="205" text-anchor="middle" font-family="monospace" font-size="12" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+  s+=`<text x="${cx}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="monospace" font-size="14" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
   s+='</svg>';
   return s;
 }
@@ -1192,18 +1195,27 @@ function drawCard(w,i){
     ${extras.length?`<div class="dw-frame">${extras.join(' · ')}</div>`:''}
   </div>`;
 }
+function applyPaper(){
+  const paper=$('#dwPaper').value, orient=$('#dwOrient').value, cols=$('#dwCols').value;
+  let st=document.getElementById('dwPageStyle');
+  if(!st){ st=document.createElement('style'); st.id='dwPageStyle'; document.head.appendChild(st); }
+  st.textContent=`@page{size:${paper} ${orient};margin:8mm}`;
+  $('#drawSheet').style.setProperty('--dwcols', cols);
+}
 function openDrawing(){
   if(!windows.length){ toast('출력할 창이 없어요'); return; }
   computeDrawScale();                               // ★ 전체 공통 스케일 (auto.py 방식)
   const today=new Date().toLocaleDateString('ko-KR');
   const place=[siteBuilding||siteAddr, siteDetail].filter(Boolean).join(' ');
-  const ratio=Math.round(1/(DRAW_SCALE*3.7795));    // px→mm 근사 (1:N)
+  const ratio=Math.round(1/(DRAW_SCALE*3.7795));
   $('#drawSheet').innerHTML=`
     <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창 &nbsp;|&nbsp; 스케일 1:${ratio}</div>
     <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)).join('')}</div>
     <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.<br>공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
+  applyPaper();
   $('#drawOverlay').classList.add('show');
 }
+['#dwPaper','#dwOrient','#dwCols'].forEach(id=>$(id).addEventListener('change',applyPaper));
 $('#drawBtn').addEventListener('click',openDrawing);
 $('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
 $('#drawPrint').addEventListener('click',()=>window.print());
