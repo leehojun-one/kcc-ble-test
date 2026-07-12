@@ -301,11 +301,15 @@
   .dw-exports{display:flex;gap:5px}
   .dw-exports button{font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:9px;border:none;background:var(--ink);color:#fff}
   .dw-exports button:active{opacity:.85}
-  /* 줌 반영 */
-  #drawSheet{--dwzoom:1}
-  #drawSheet .dw-card{font-size:calc(1em * var(--dwzoom))}
-  #drawSheet .dw-svg svg{transform:scale(var(--dwzoom));transform-origin:top center}
-  #drawSheet .dw-svg{overflow:visible}
+  /* 줌 반영 — 카드 자체가 커지고, 넘치면 자동으로 다음 줄 */
+  #drawSheet{--dwzoom:1; --dwcard:220px}
+  #drawSheet .dw-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(calc(var(--dwcard) * var(--dwzoom)), 1fr));gap:10px;align-items:start}
+  #drawSheet .dw-card{width:100%}
+  #drawSheet .dw-svg svg{width:100%;height:auto;display:block}
+  #drawSheet .dw-title{font-size:calc(14px * var(--dwzoom))}
+  #drawSheet .dw-title span{font-size:calc(11.5px * var(--dwzoom))}
+  #drawSheet .dw-glass{font-size:calc(12.5px * var(--dwzoom))}
+  #drawSheet .dw-tag{font-size:calc(10px * var(--dwzoom))}
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
   @page{size:A3 landscape;margin:8mm}
   @media print {
@@ -1412,21 +1416,23 @@ function applyPaper(){
   const paper=$('#dwPaper').value, orient=$('#dwOrient').value;
   const P=paperSize(paper,orient);
   const usableW=P.w-16;                       // 여백 8mm x2
-  const cardMM=52*dwZoom;                     // 카드 1개 기본 폭(mm) × 배율
-  const cols=Math.max(1, Math.min(8, Math.floor(usableW/cardMM)));
+  const cardMM=48*dwZoom;                     // 카드 1개 기본 폭(mm) × 배율
+  const cols=Math.max(1, Math.floor(usableW/cardMM));
   let st=document.getElementById('dwPageStyle');
   if(!st){ st=document.createElement('style'); st.id='dwPageStyle'; document.head.appendChild(st); }
-  // @page + 인쇄 시 시트 폭을 용지 실폭(mm)으로 고정 → 방향이 확실히 반영됨
+  // 인쇄 시: 용지 실폭 고정 + 카드 폭을 mm로 → 넘치면 자동 줄바꿈
   st.textContent=`@page{size:${paper} ${orient};margin:8mm}
-    @media print{ #drawSheet{width:${usableW}mm !important; } }`;
+    @media print{
+      #drawSheet{width:${usableW}mm !important;}
+      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important;}
+    }`;
   const sheet=$('#drawSheet');
-  sheet.style.setProperty('--dwcols', cols);
   sheet.style.setProperty('--dwzoom', dwZoom);
   $('#dwScaleLabel').textContent=Math.round(dwZoom*100)+'%';
   // 페이지 수 추정
   const total=document.querySelectorAll('#drawSheet .dw-card').length;
   const rows=Math.ceil(total/cols);
-  const rowMM=76*dwZoom;
+  const rowMM=74*dwZoom;
   const perPage=Math.max(1,Math.floor((P.h-30)/rowMM));
   const pages=Math.max(1,Math.ceil(rows/perPage));
   $('#dwPageInfo').textContent=`${cols}단 · ${pages}p`;
