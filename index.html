@@ -399,6 +399,7 @@
   .logbody pre{font-family:var(--mono);font-size:10px;line-height:1.7;color:#9BE7C4;padding:10px 13px;white-space:pre-wrap;word-break:break-all}
 </style>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -1415,7 +1416,9 @@ function applyPaper(){
   const cols=Math.max(1, Math.min(8, Math.floor(usableW/cardMM)));
   let st=document.getElementById('dwPageStyle');
   if(!st){ st=document.createElement('style'); st.id='dwPageStyle'; document.head.appendChild(st); }
-  st.textContent=`@page{size:${paper} ${orient};margin:8mm}`;
+  // @page + 인쇄 시 시트 폭을 용지 실폭(mm)으로 고정 → 방향이 확실히 반영됨
+  st.textContent=`@page{size:${paper} ${orient};margin:8mm}
+    @media print{ #drawSheet{width:${usableW}mm !important; } }`;
   const sheet=$('#drawSheet');
   sheet.style.setProperty('--dwcols', cols);
   sheet.style.setProperty('--dwzoom', dwZoom);
@@ -1432,37 +1435,26 @@ function applyPaper(){
 $('#dwZoomIn').addEventListener('click',()=>{ dwZoom=Math.min(2.0, +(dwZoom+0.1).toFixed(2)); applyPaper(); });
 $('#dwZoomOut').addEventListener('click',()=>{ dwZoom=Math.max(0.5, +(dwZoom-0.1).toFixed(2)); applyPaper(); });
 
-/* PNG 저장 — SVG를 캔버스로 래스터화 */
+/* PNG 저장 — html2canvas (SVG 포함 안정 렌더) */
 async function exportPNG(rootSel, filename){
   const root=$(rootSel);
+  if(typeof html2canvas==='undefined'){ toast('PNG 라이브러리 로딩 중 — 잠시 후 다시'); return; }
   toast('PNG 생성 중…');
-  const w=root.scrollWidth, h=root.scrollHeight;
-  // foreignObject로 HTML 전체를 SVG에 담아 렌더
-  const cs=[...document.styleSheets].map(ss=>{ try{ return [...ss.cssRules].map(r=>r.cssText).join('\n'); }catch(e){ return ''; } }).join('\n');
-  const clone=root.cloneNode(true);
-  clone.querySelectorAll('.dw-noprint').forEach(e=>e.remove());
-  const html=`<div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;background:#fff">${clone.innerHTML}</div>`;
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><style>${cs}</style><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
-  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const img=new Image();
-  img.onload=()=>{
-    const c=document.createElement('canvas');
-    const S=2;                            // 2x 해상도
-    c.width=w*S; c.height=h*S;
-    const ctx=c.getContext('2d');
-    ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
-    ctx.scale(S,S); ctx.drawImage(img,0,0);
-    URL.revokeObjectURL(url);
-    c.toBlob(b=>{
+  try{
+    const canvas=await html2canvas(root,{
+      scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false,
+      windowWidth:root.scrollWidth, windowHeight:root.scrollHeight,
+      ignoreElements:(el)=>el.classList && el.classList.contains('dw-noprint')
+    });
+    canvas.toBlob(b=>{
+      if(!b){ toast('PNG 생성 실패'); return; }
       const a=document.createElement('a');
-      a.href=URL.createObjectURL(b); a.download=filename; a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      a.href=URL.createObjectURL(b); a.download=filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),2000);
       toast('PNG 저장 완료 ✓');
     },'image/png');
-  };
-  img.onerror=()=>{ toast('PNG 실패 — PDF를 사용하세요'); URL.revokeObjectURL(url); };
-  img.src=url;
+  }catch(e){ console.error(e); toast('PNG 실패 — PDF를 사용하세요'); }
 }
 function fileBase(){
   const place=(siteBuilding||siteName||'현장').replace(/[\\/:*?"<>|]/g,'');
@@ -1487,7 +1479,11 @@ function openDrawing(){
 ['#dwPaper','#dwOrient'].forEach(id=>$(id).addEventListener('change',applyPaper));
 $('#drawBtn').addEventListener('click',openDrawing);
 $('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
-$('#drawPdf').addEventListener('click',()=>{ document.body.classList.add('printing-draw'); window.print(); setTimeout(()=>document.body.classList.remove('printing-draw'),500); });
+$('#drawPdf').addEventListener('click',()=>{
+  applyPaper();
+  toast(`인쇄창에서 '${$('#dwPaper').value} ${$('#dwOrient').value==='landscape'?'가로':'세로'}' 확인 후 저장`);
+  setTimeout(()=>window.print(),400);
+});
 $('#drawPng').addEventListener('click',()=>exportPNG('#drawSheet', fileBase()+'_도면.png'));
 
 /* ===== 견적서 (브랜드별 비교) ===== */
@@ -1563,12 +1559,18 @@ $('#quoteBtn').addEventListener('click',()=>{ renderQuote(); $('#quoteOverlay').
 $('#quoteClose').addEventListener('click',()=>$('#quoteOverlay').classList.remove('show'));
 function applyQuotePaper(){
   const paper=$('#qPaper').value, orient=$('#qOrient').value;
+  const P=paperSize(paper,orient); const usableW=P.w-20;
   let st=document.getElementById('qPageStyle');
   if(!st){ st=document.createElement('style'); st.id='qPageStyle'; document.head.appendChild(st); }
-  st.textContent=`@page{size:${paper} ${orient};margin:10mm}`;
+  st.textContent=`@page{size:${paper} ${orient};margin:10mm}
+    @media print{ #quoteOverlay .dw-sheet{width:${usableW}mm !important;} }`;
 }
 ['#qPaper','#qOrient'].forEach(id=>$(id).addEventListener('change',applyQuotePaper));
-$('#quotePdf').addEventListener('click',()=>{ applyQuotePaper(); document.body.classList.add('printing-quote'); window.print(); setTimeout(()=>document.body.classList.remove('printing-quote'),500); });
+$('#quotePdf').addEventListener('click',()=>{
+  applyQuotePaper();
+  toast(`인쇄창에서 '${$('#qPaper').value} ${$('#qOrient').value==='landscape'?'가로':'세로'}' 확인 후 저장`);
+  setTimeout(()=>window.print(),400);
+});
 $('#quotePng').addEventListener('click',()=>exportPNG('#quoteBody', fileBase()+'_견적서.png'));
 ['#qFloor','#qChul','#qRegion'].forEach(id=>$(id).addEventListener('input',renderQuote));
 
