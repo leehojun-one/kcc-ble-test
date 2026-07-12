@@ -217,6 +217,19 @@
   .ml-sub .ml-num{color:var(--muted);font-size:11px}
   .c-frametag{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--laser-deep);margin-left:4px}
 
+  /* v22: 섹션 구분 / 활성 카드 / 삭제 */
+  .c-secthead{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);background:var(--surface-2);border-left:3px solid var(--laser-deep);padding:7px 10px;border-radius:0 8px 8px 0;margin:16px 0 4px}
+  .c-secthead:first-child{margin-top:6px}
+  .c-del{width:100%;margin-top:16px;background:transparent;border:1px solid var(--alert);color:var(--alert);font-size:13px;font-weight:600;padding:11px;border-radius:10px}
+  .c-del:active{background:var(--alert);color:#fff}
+  .chip-done.chip-editing{background:var(--laser-deep);border-color:var(--laser-deep)}
+  .chip-done.chip-editing .n,.chip-done.chip-editing .p,.chip-done.chip-editing .s{color:#fff}
+  .chip-done.chip-open{border-color:var(--laser-deep);border-width:2px;background:rgba(0,199,117,.08)}
+  .ml-row.ml-active{background:rgba(0,199,117,.10);border-radius:8px}
+  .ml-row.ml-active .ml-edit{color:var(--laser-deep);font-weight:700}
+  .ml-del{background:transparent;border:none;color:var(--alert);font-size:15px;padding:4px 8px;flex:none;cursor:pointer}
+  .c-body .size-box{cursor:pointer}
+
   /* 도면 출력 */
   .draw-overlay{position:fixed;inset:0;background:#fff;z-index:80;display:none;flex-direction:column}
   .draw-overlay.show{display:flex}
@@ -425,10 +438,9 @@
   <button class="finish" id="finishBtn" style="flex:1">실측 완료 →</button>
 </div>
 <div class="inner" id="consultBar" style="display:none">
-  <button class="next" id="backBtn" style="background:transparent;color:var(--ink);border:1px solid var(--hair);flex:0.7">◀</button>
-  <button class="next" id="drawBtn" style="background:var(--ink);color:#fff">📐 도면</button>
-  <button class="next" id="quoteBtn" style="background:#0B7A3B;color:#fff">💰 견적</button>
-  <button class="finish" id="saveBtn" style="flex:0.9">저장</button>
+  <button class="next" id="drawBtn" style="background:var(--ink);color:#fff;flex:0.8">📐</button>
+  <button class="next" id="quoteBtn" style="background:#0B7A3B;color:#fff;flex:0.8">💰</button>
+  <button class="finish" id="doneBtn">✓ 상담 완료</button>
 </div></div>
 
 <div class="draw-overlay" id="drawOverlay">
@@ -503,16 +515,19 @@ const SVC_UUID='02a6c0d0-0451-4000-b000-fb3210111989';
 const CHAR_UUID='02a6c0d1-0451-4000-b000-fb3210111989';
 const ENABLE_CMD=new Uint8Array([0xc0,0x55,0x02,0x01,0x00,0x1a]);
 const PKT_PREFIX=[0xc0,0x55,0x10,0x06];
-const LOCATIONS=['거실발코니','안방발코니','거실분합','안방창','후면방발코니','후면방','입구방발코니','입구방','입구우방발코니','입구우방','입구좌방발코니','입구좌방','주방창','주방발코니','세탁실','세탁실(좌)','세탁실(중)','세탁실우','거실터닝도어','주방터닝도어','현관전실'];
+const LOCATIONS=['거실발코니','거실확장','거실분합','안방발코니','안방창','후면방발코니','후면방','후면방확장','입구방발코니','입구방','입구우방발코니','입구우방','입구우방확장','입구좌방발코니','입구좌방','입구좌방확장','주방창','주방발코니','세탁실','세탁실(좌)','세탁실(중)','세탁실우','거실터닝도어','주방터닝도어','현관전실'];
 const PRODUCTS=['발코니이중창','발코니단창','공틀일체형단창','일반이중창','일반단창','고정창','터닝도어','PJ창'];
 
 /* 통바(코너바) — auto.py 규칙: 색상 + 공제(mm). CB135는 공제 없음(투명자재) */
+/* 통바 — auto.py: 도면폭 = thick × scale (mm 실치수 기준), 여기에 0.8 적용 */
+const TB_W=0.8;
 const TONGBA={
-  CB100:{label:'CB100',code:'CB-100*100',color:'#39FF14',deduct:100,vis:15},
-  CB90 :{label:'CB90', code:'CB-100*45', color:'#FFFF00',deduct:45, vis:9},
-  CB45 :{label:'CB45', code:'CB-45*45',  color:'#00FFFF',deduct:45, vis:9},
-  CB135:{label:'CB135',code:'CB-135',    color:'#FF00FF',deduct:0,  vis:9}
+  CB100:{label:'CB100',code:'CB-100*100',color:'#39FF14',tcol:'#001F66',deduct:100,thick:100,scale:1.3},
+  CB90 :{label:'CB90', code:'CB-100*45', color:'#FFFF00',tcol:'#DC2626',deduct:45, thick:60, scale:1.5},
+  CB45 :{label:'CB45', code:'CB-45*45',  color:'#00FFFF',tcol:'#001F66',deduct:45, thick:60, scale:1.5},
+  CB135:{label:'CB135',code:'CB-135',    color:'#FF00FF',tcol:'#001F66',deduct:0,  thick:60, scale:1.4}
 };
+function tbDrawMM(id){ const t=TONGBA[id]; return t? t.thick*t.scale*TB_W : 0; }   // 도면상 mm 폭
 const FRAMES=['CB90 ㅁ자공틀','CB90 ㄷ자공틀','CB45 ㅁ자공틀','CB45 ㄷ자공틀'];
 
 /* ===================== 견적/상담 데이터 (이미지 기반, 여기만 고치면 됩니다) ===================== */
@@ -520,13 +535,15 @@ const FRAMES=['CB90 ㅁ자공틀','CB90 ㄷ자공틀','CB45 ㅁ자공틀','CB45 
 const CONSULT_GROUP={
   '발코니이중창':'G2','발코니단창':'G2',
   '공틀일체형단창':'G3','일반단창':'G3','일반이중창':'G3',
-  '고정창':'G4','터닝도어':'G4','PJ창':'G4'
+  '고정창':'FIX','터닝도어':'TD','PJ창':'PJ'
 };
 // 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
 const CONSULT_OPTS={
-  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['방충망핸들','윈드가드']},
-  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]},
-  G4:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:['투명+투명','투명+로이'],color:['미스트','모루'],gap:['AL','단열간봉'],lock:['전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:[]}
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음']},
+  FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음']},
+  TD:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음']},
+  PJ:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:['없음','롤방충망'],opts:['없음']}
 };
 const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
@@ -622,7 +639,7 @@ function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id;
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 let siteName='', custPhone='', siteAddr='', siteBuilding='', siteDetail='', sessionId=null, editingIndex=null;
-function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'',gap:'',lock:'',screen:'',opts:[]}}; }
+function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[]}}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -864,7 +881,7 @@ function switchTab(name){
   $('#tabMeasure').classList.toggle('sel',meas);
   $('#tabConsult').classList.toggle('sel',!meas);
   if(meas){ updateActionLabels(); renderTray(); }
-  else { if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); }
+  else { if(expandedIdx<0 && windows.length) expandedIdx=0; renderConsult(); renderTray(); }
 }
 $('#tabMeasure').addEventListener('click',()=>switchTab('measure'));
 /* 탭 이동은 순수 보기 전환 — 창 저장은 오직 버튼(다음/추가/실측완료)으로만 */
@@ -892,10 +909,11 @@ function renderConsult(){
 /* 창종류별 세부상담 (그룹 옵션) */
 function specSection(w,i){
   const grp=CONSULT_GROUP[w.product];
-  if(!grp) return `<div class="c-sub">세부 상담</div><div class="tb-none">창 종류를 먼저 선택하세요 (실측탭)</div>`;
+  if(!grp) return `<div class="tb-none">창 종류를 먼저 선택하세요</div>`;
   const O=CONSULT_OPTS[grp]; const sp=w.spec||{}; const dbl=isDoubleWin(w.product);
   const row=(key)=>{
     let arr=O[key]; if(!arr||!arr.length) return '';
+    if(key==='inner'&&!dbl) return '';                            // 단창은 내측 없음
     if(key==='lock'&&dbl) arr=arr.filter(x=>x!=='양방향핸들');   // 이중창 양방향핸들 불가
     const multi=(key==='opts');
     const chips=arr.map(o=>{
@@ -905,19 +923,33 @@ function specSection(w,i){
     const lbl = key==='outer' ? (dbl?'외측 유리사양':'유리 사양') : SPEC_LABELS[key];
     return `<div class="c-sub">${lbl}</div><div class="spec-chips">${chips}</div>`;
   };
-  // 단창은 외측만, 이중창은 외측+내측
-  const keys = dbl ? ['thick','outer','inner','color','gap','lock','screen','opts']
-                   : ['thick','outer','color','gap','lock','screen','opts'];
-  return keys.map(row).join('');
+  return ['thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
+}
+/* 상담탭에서 사이즈 직접 편집 (실측탭 안 가도 됨) */
+function sizeEditor(w,i){
+  const needV=!!(SHAPE_DEFS[w.shape]||{}).unbalanced;
+  const box=(f,lab,val,cls)=>`<div class="size-box ${cls||''}" data-csize="${f}" data-ci="${i}"><label>${lab}</label><div class="sv">${val||'—'}</div><div class="su">mm</div></div>`;
+  return `<div class="c-sub">확정 사이즈 <span style="color:var(--muted);font-weight:400">(탭하여 수정)</span></div>
+    <div class="size-grid" style="margin-bottom:4px">
+      ${box('w','넓이 W',w.w)}${box('h','높이 H',w.h)}
+      ${needV?box('v','벤트 V',(w.data&&w.data['V'])||'','vbox'):''}
+    </div>
+    ${needV&&!(w.data&&w.data['V'])?'<div class="tb-ded" style="color:var(--alert)">⚠ 벤트 V를 입력하세요</div>':''}`;
 }
 function consultBody(w,i){
   const shapes=SHAPES.map(s=>`<button class="mini-shape ${w.shape===s.id?'sel':''}" data-shapec="${s.id}" data-ci="${i}">${shapeIcon(s.id)}<span>${s.label}</span></button>`).join('');
   const sideRow=(SHAPE_DEFS[w.shape]||{}).side?`<div class="c-sub">${(SHAPE_DEFS[w.shape].handle?'핸들':'주벤트')} 방향</div><div class="side-toggle"><button class="${w.side==='좌'?'sel':''}" data-sidec="좌" data-ci="${i}">좌</button><button class="${w.side==='우'?'sel':''}" data-sidec="우" data-ci="${i}">우</button></div>`:'';
+  const prods=PRODUCTS.map(p=>`<button class="spec-chip ${w.product===p?'sel':''}" data-prodc="${p}" data-ci="${i}">${p}</button>`).join('');
   return `<div class="c-body">
+    <div class="c-secthead">제품 사양</div>
+    <div class="c-sub">창 종류</div><div class="spec-chips">${prods}</div>
     <div class="c-sub">창 형태 변경</div><div class="mini-shape-grid">${shapes}</div>${sideRow}
+    ${sizeEditor(w,i)}
     <div class="c-dia-wrap">${winDiagramSVG(w)}</div>
     ${tongbaSection(w,i)}
+    <div class="c-secthead">옵션 선택</div>
     <div class="c-specwrap">${specSection(w,i)}</div>
+    <button class="c-del" data-wdel="${i}">🗑 이 창 삭제</button>
   </div>`;
 }
 /* 통바(코너바) 편집 UI */
@@ -936,7 +968,7 @@ function tongbaSection(w,i){
     <div class="tb-faces"><span>붙일 면 →</span>${faces}</div>
     <div class="tb-chips">${chips}</div>
     <div class="tb-ded">${dedTxt}</div>
-    <div class="c-sub">공틀 (비고)</div><div class="spec-chips">${frames}</div>`;
+    <div class="c-sub">공틀</div><div class="spec-chips">${frames}</div>`;
 }
 /* 상담탭 실시간 도면 (형태·방향·비율·통바 반영) */
 function winDiagramSVG(w){
@@ -952,12 +984,14 @@ function winDiagramSVG(w){
   let s=`<svg viewBox="0 0 320 210" class="consult-dia">`;
   const t=w.tongba||{};
   const band=(x,y,ww,hh,col)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${col}" stroke="#333" stroke-width="0.5"/>`;
+  const cs = (w.w&&w.h) ? Math.min(fw/Math.max(1,(w.w-tongbaDeduct(w).W)), fh/Math.max(1,(w.h-tongbaDeduct(w).H))) : 0.05;
+  const cvis = id => Math.max(3, tbDrawMM(id)*cs);
   // 좌/우 (세로 밴드)
-  let ox=fx; (t.left||[]).forEach(id=>{ const v=TONGBA[id].vis; ox-=v; s+=band(ox,fy,v,fh,TONGBA[id].color); });
-  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const v=TONGBA[id].vis; s+=band(oxr,fy,v,fh,TONGBA[id].color); oxr+=v; });
+  let ox=fx; (t.left||[]).forEach(id=>{ const v=cvis(id); ox-=v; s+=band(ox,fy,v,fh,TONGBA[id].color); });
+  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const v=cvis(id); s+=band(oxr,fy,v,fh,TONGBA[id].color); oxr+=v; });
   // 상/하 (가로 밴드)
-  let oy=fy; (t.top||[]).forEach(id=>{ const v=TONGBA[id].vis; oy-=v; s+=band(fx,oy,fw,v,TONGBA[id].color); });
-  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const v=TONGBA[id].vis; s+=band(fx,oyb,fw,v,TONGBA[id].color); oyb+=v; });
+  let oy=fy; (t.top||[]).forEach(id=>{ const v=cvis(id); oy-=v; s+=band(fx,oy,fw,v,TONGBA[id].color); });
+  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const v=cvis(id); s+=band(fx,oyb,fw,v,TONGBA[id].color); oyb+=v; });
   // 창호 프레임 (net)
   s+=`<rect class="frame" x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="3"/>`;
   s+=`<rect class="frame-glass" x="${fx+5}" y="${fy+5}" width="${fw-10}" height="${fh-10}"/>`;
@@ -974,11 +1008,17 @@ $('#consultList').addEventListener('click',e=>{
   if(tg){ const i=+tg.dataset.toggle; expandedIdx=(expandedIdx===i)?-1:i; renderConsult(); return; }
   const tsel=e.target.closest('[data-tsel]');
   if(tsel){ selTongba=tsel.dataset.tsel; renderConsult(); return; }   // 통바 종류 선택 (창 무관)
+  const wd=e.target.closest('[data-wdel]');
+  if(wd){ const i=+wd.dataset.wdel; deleteWindow(i); return; }
   const cel=e.target.closest('[data-ci]'); if(!cel)return; const i=+cel.dataset.ci; const w=windows[i]; if(!w)return;
+  const cs=e.target.closest('[data-csize]');
+  if(cs){ openKeypad(cs.dataset.csize, i); return; }                  // 상담탭 사이즈 수정
+  const pc=e.target.closest('[data-prodc]');
+  if(pc){ w.product=(w.product===pc.dataset.prodc)?'':pc.dataset.prodc; w.spec={thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[]}; renderConsult(); renderTray(); autosave(); return; }
   const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]');
   const tf=e.target.closest('[data-tface]'),tdel=e.target.closest('[data-tdel]'),fr=e.target.closest('[data-framec]');
   const sp=e.target.closest('[data-spec]');
-  if(sh) w.shape=sh.dataset.shapec;
+  if(sh){ w.shape=sh.dataset.shapec; if(!(SHAPE_DEFS[w.shape]||{}).unbalanced && w.data) delete w.data['V']; }
   else if(sd) w.side=sd.dataset.sidec;
   else if(sp){ w.spec=w.spec||{}; const key=sp.dataset.spec,val=sp.dataset.val,multi=sp.dataset.multi==='1';
     if(multi){ w.spec[key]=w.spec[key]||[]; const k=w.spec[key].indexOf(val); if(k>=0)w.spec[key].splice(k,1); else w.spec[key].push(val); }
@@ -989,59 +1029,133 @@ $('#consultList').addEventListener('click',e=>{
   else return;
   renderConsult(); autosave();
 });
-$('#backBtn').addEventListener('click',()=>switchTab('measure'));
+/* 상담 완료 검증 — 옵션 미선택 창 찾기 */
+function missingSpecs(w){
+  const grp=CONSULT_GROUP[w.product]; const miss=[];
+  if(!w.product){ miss.push('창종류'); return miss; }
+  if(!w.w||!w.h) miss.push('사이즈');
+  if((SHAPE_DEFS[w.shape]||{}).unbalanced && !(w.data&&w.data['V'])) miss.push('벤트V');
+  if(!grp) return miss;
+  const O=CONSULT_OPTS[grp], sp=w.spec||{}, dbl=isDoubleWin(w.product);
+  const need=[['thick','유리두께'],['outer','유리사양'],['gap','간봉']];
+  if(dbl && O.inner && O.inner.length) need.push(['inner','내측유리']);
+  if(O.lock && O.lock.length) need.push(['lock','잠금장치']);
+  if(O.screen && O.screen.length) need.push(['screen','방충망']);
+  if(O.opts && O.opts.length) need.push(['opts','추가옵션']);
+  need.forEach(([k,lab])=>{
+    if(k==='opts'){ if(!(sp.opts&&sp.opts.length)) miss.push(lab); }
+    else if(!sp[k]) miss.push(lab);
+  });
+  return miss;
+}
 
 /* ===== 도면 출력 (auto.py 스타일 — 각진 선, 라운딩/끊김 없음) ===== */
+/* ===== 도면 렌더 (auto.py 기준) ===== */
+let DRAW_SCALE=1;   // 전체 창 공통 스케일 (px per mm)
+function computeDrawScale(){
+  const maxW=Math.max(2500, ...windows.map(w=>(w.w||0)+tongbaDeduct(w).W*0));
+  const maxH=Math.max(2500, ...windows.map(w=>(w.h||0)));
+  const availW=155, availH=138;                       // 카드 내 도면 영역(px)
+  DRAW_SCALE=Math.min(availW/maxW, availH/maxH);
+}
+/* 유리 해칭 (미스트=도트, 모루=세로줄) */
+function glassHatchDefs(){
+  return `<defs>
+    <pattern id="mistPat" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="3" fill="#BAE6FD" fill-opacity="0.55"/>
+      <circle cx="1.5" cy="1.5" r="0.55" fill="#0C4A6E" fill-opacity="0.6"/>
+    </pattern>
+    <pattern id="moruPat" width="2.6" height="4" patternUnits="userSpaceOnUse">
+      <rect width="2.6" height="4" fill="#fff"/>
+      <line x1="0.6" y1="0" x2="0.6" y2="4" stroke="#9CA3AF" stroke-width="0.5" opacity="0.8"/>
+    </pattern>
+  </defs>`;
+}
 function shapeSplit(w,fx,fy,fw,fh){
   const def=SHAPE_DEFS[w.shape]||{}; const yT=fy,yB=fy+fh;
   const vline=x=>`<line x1="${x}" y1="${yT}" x2="${x}" y2="${yB}" stroke="#000" stroke-width="1"/>`;
+  const dash=(pts)=>`<polyline points="${pts}" fill="none" stroke="#6B7280" stroke-width="0.9" stroke-dasharray="3,2" shape-rendering="auto"/>`;
   if(def.fix) return '';
-  if(def.pj) return `<polyline points="${fx},${yB} ${fx+fw/2},${yT} ${fx+fw},${yB}" fill="none" stroke="#000" stroke-width="1"/>`;
-  if(def.handle) return `<polyline points="${w.side==='좌'?fx:fx+fw},${yT} ${w.side==='좌'?fx+fw:fx},${fy+fh/2} ${w.side==='좌'?fx:fx+fw},${yB}" fill="none" stroke="#000" stroke-width="1"/>`;
+  // PJ: 상부 꼭지 + 센터 보조선 (진회색)
+  if(def.pj){ const cxm=fx+fw/2;
+    return dash(`${fx},${yB} ${cxm},${yT} ${fx+fw},${yB}`) + `<line x1="${cxm}" y1="${yT}" x2="${cxm}" y2="${yB}" stroke="#6B7280" stroke-width="0.7" stroke-dasharray="4,3" shape-rendering="auto"/>`;
+  }
+  // T/D: 센터 기준 삼각 보조선 (진회색)
+  if(def.handle){ const ym=fy+fh/2, base=w.side==='좌'?fx:fx+fw, apex=w.side==='좌'?fx+fw:fx;
+    return dash(`${base},${yT} ${apex},${ym} ${base},${yB}`) + `<line x1="${fx}" y1="${ym}" x2="${fx+fw}" y2="${ym}" stroke="#6B7280" stroke-width="0.7" stroke-dasharray="4,3" shape-rendering="auto"/>`;
+  }
   if(def.unbalanced){ if(def.triple)return vline(fx+fw*0.2)+vline(fx+fw*0.5)+vline(fx+fw*0.8); return vline(w.side==='좌'?fx+fw*0.3:fx+fw*0.7); }
   if(w.shape==='2W') return vline(fx+fw*0.5);
   if(w.shape==='2W12'){ const r=w.side==='좌'?1/3:2/3; return vline(fx+fw*r); }
   let s=''; (def.div||[]).forEach(r=>s+=vline(fx+fw*r)); return s;
 }
+/* 벤트 화살표 (좌/우 텍스트 없이 화살표만) */
+function ventArrow(cx,cy,dir,len){
+  const L=len||13, d=(dir==='left'?-1:1), tip=cx+d*L/2, tail=cx-d*L/2;
+  return `<line x1="${tail}" y1="${cy}" x2="${tip}" y2="${cy}" stroke="#000" stroke-width="1.4" shape-rendering="auto"/>`+
+         `<polyline points="${tip-d*4},${cy-3} ${tip},${cy} ${tip-d*4},${cy+3}" fill="none" stroke="#000" stroke-width="1.4" shape-rendering="auto"/>`;
+}
+/* 터닝도어 핸들 (좌/우) */
+function doorHandle(x,cy,side){
+  const d=(side==='좌'?1:-1);
+  return `<rect x="${x-1}" y="${cy-5}" width="2" height="10" fill="#111" shape-rendering="auto"/>`+
+         `<rect x="${x+(d>0?1:-3)}" y="${cy-1}" width="2.5" height="2" fill="#111" shape-rendering="auto"/>`;
+}
 function bigDiagramSVG(w){
   const ded=tongbaDeduct(w);
   const netW=Math.max(1,(w.w||0)-ded.W), netH=Math.max(1,(w.h||0)-ded.H);
-  const rw=(w.w?netW:1), rh=(w.h?netH:1);
-  const availW=150, availH=140, cx=170, cy=95;
-  let fw,fh;
-  if(w.w&&w.h){ const s=Math.min(availW/rw,availH/rh); fw=rw*s; fh=rh*s; } else {fw=availW*0.6;fh=availH*0.8;}
-  fw=Math.max(40,Math.min(fw,availW)); fh=Math.max(40,Math.min(fh,availH));
-  const fx=cx-fw/2, fy=cy-fh/2;
-  const def=SHAPE_DEFS[w.shape]||{};
-  let s=`<svg viewBox="0 0 340 215" shape-rendering="crispEdges">`;
+  const S=DRAW_SCALE;
+  let fw=(w.w?netW:1000)*S, fh=(w.h?netH:1000)*S;
+  fw=Math.max(18,fw); fh=Math.max(18,fh);
+  const cx=170, cy=95, fx=cx-fw/2, fy=cy-fh/2;
+  const def=SHAPE_DEFS[w.shape]||{}; const sp=w.spec||{};
+  const hasScreen=!!(sp.screen&&sp.screen!=='없음');
+  const isMist=(sp.color==='미스트'), isMoru=(sp.color==='모루');
+  let s=`<svg viewBox="0 0 340 215" shape-rendering="crispEdges">${glassHatchDefs()}`;
   const t=w.tongba||{};
   const band=(x,y,ww,hh,col)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${col}" stroke="#000" stroke-width="0.8"/>`;
-  const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
-  const hlab=(x,y,txt)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5.5" font-weight="700" shape-rendering="auto">${txt}</text>`;
-  // 통바 밴드 (좌/우 세로라벨, 상/하 가로라벨)
-  let ox=fx; (t.left||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; ox-=v; s+=band(ox,fy,v,fh,tb.color); s+=vlab(ox+v/2,fy+fh/2,tb.code); });
-  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(oxr,fy,v,fh,tb.color); s+=vlab(oxr+v/2,fy+fh/2,tb.code); oxr+=v; });
-  let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code); });
-  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=tb.vis; s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code); oyb+=v; });
-  // 프레임 (각진, 흰 배경)
-  const sp=w.spec||{};
-  const hasScreen=!!(sp.screen&&sp.screen!=='없음');
-  const isMist=(sp.color==='미스트'||sp.color==='모루');
-  s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="#fff" stroke="#000" stroke-width="1.5"/>`;
-  // 미스트/모루 색상 표시 (빨강, 상단)
-  if(isMist) s+=`<text x="${cx}" y="${fy+11}" text-anchor="middle" font-family="sans-serif" font-size="8.5" font-weight="700" fill="#DC2626" shape-rendering="auto">${sp.color}</text>`;
+  const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
+  const hlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="5" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
+  // 통바 밴드 (mm 실치수 × 공통스케일)
+  let ox=fx; (t.left||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); ox-=v; s+=band(ox,fy,v,fh,tb.color); s+=vlab(ox+v/2,fy+fh/2,tb.code,tb.tcol); });
+  let oxr=fx+fw; (t.right||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); s+=band(oxr,fy,v,fh,tb.color); s+=vlab(oxr+v/2,fy+fh/2,tb.code,tb.tcol); oxr+=v; });
+  let oy=fy; (t.top||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); oy-=v; s+=band(fx,oy,fw,v,tb.color); s+=hlab(fx+fw/2,oy+v/2,tb.code,tb.tcol); });
+  let oyb=fy+fh; (t.bottom||[]).forEach(id=>{ const tb=TONGBA[id],v=Math.max(3,tbDrawMM(id)*S); s+=band(fx,oyb,fw,v,tb.color); s+=hlab(fx+fw/2,oyb+v/2,tb.code,tb.tcol); oyb+=v; });
+  // 유리면 (미스트 도트 / 모루 줄무늬)
+  const glassFill = isMist?'url(#mistPat)' : isMoru?'url(#moruPat)' : '#fff';
+  s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="${glassFill}" stroke="#000" stroke-width="1.5"/>`;
   // 분할선/형태
   s+=shapeSplit(w,fx,fy,fw,fh);
-  // Fix
   if(def.fix) s+=`<text x="${cx}" y="${fy+fh/2}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="13" font-weight="700" shape-rendering="auto">Fix</text>`;
-  // 벤트 방향 (▶좌 / ◀우) + 망 + V
-  if(def.side){
-    const vx = w.side==='좌'? fx+fw*0.25 : fx+fw*0.75;
-    if(hasScreen) s+=`<text x="${vx}" y="${fy+fh/2-14}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
-    s+=`<text x="${vx}" y="${fy+fh/2}" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" shape-rendering="auto">${w.side==='우'?'◀':'▶'} ${w.side}</text>`;
-    if('V' in w.data) s+=`<text x="${vx}" y="${fy+fh/2+13}" text-anchor="middle" font-family="monospace" font-size="9" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
+  // 미스트/모루 라벨
+  if(isMist||isMoru) s+=`<text x="${cx}" y="${fy+fh*0.22}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="${isMist?'#DC2626':'#0F766E'}" shape-rendering="auto">${sp.color}</text>`;
+  const ym=fy+fh/2;
+  // ── 벤트/핸들/망 표기
+  if(def.handle){                                   // 터닝도어: 핸들 모양
+    const hx = w.side==='좌' ? fx+7 : fx+fw-7;
+    s+=doorHandle(hx,ym,w.side);
+  } else if(w.shape==='3W'||w.shape==='3WU'){       // 3W/3WU: 좌·우 주벤트 화살표 + 망
+    const lx=fx+fw*0.12, rx=fx+fw*0.88;
+    s+=ventArrow(lx,ym,'left'); s+=ventArrow(rx,ym,'right');
+    if(hasScreen){
+      s+=`<text x="${lx}" y="${ym-12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+      s+=`<text x="${rx}" y="${ym-12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+    }
+    if('V' in w.data){
+      s+=`<text x="${lx}" y="${ym+14}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
+      s+=`<text x="${rx}" y="${ym+14}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
+    }
+  } else if(def.side){                              // 2W/2W12/2WU: 주벤트 중앙에 정보
+    // 주벤트 칸의 중앙 X 계산
+    let vcx;
+    if(w.shape==='2W12'){ const r=w.side==='좌'?1/3:2/3; vcx = w.side==='좌' ? fx+fw*r/2 : fx+fw*(r+1)/2; }
+    else if(w.shape==='2WU'){ const r=w.side==='좌'?0.3:0.7; vcx = w.side==='좌' ? fx+fw*r/2 : fx+fw*(r+1)/2; }
+    else { vcx = w.side==='좌' ? fx+fw*0.25 : fx+fw*0.75; }
+    if(hasScreen) s+=`<text x="${vcx}" y="${ym-13}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+    s+=ventArrow(vcx,ym,w.side==='우'?'left':'right');
+    if('V' in w.data) s+=`<text x="${vcx}" y="${ym+15}" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`;
   } else if(hasScreen && !def.fix){
-    s+=`<text x="${cx}" y="${fy+13}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
+    s+=`<text x="${cx}" y="${fy+12}" text-anchor="middle" font-family="sans-serif" font-size="7.5" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
   }
   // 사이즈 (파랑, 순치수)
   const sizeTxt = (ded.W||ded.H) ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
@@ -1080,10 +1194,12 @@ function drawCard(w,i){
 }
 function openDrawing(){
   if(!windows.length){ toast('출력할 창이 없어요'); return; }
+  computeDrawScale();                               // ★ 전체 공통 스케일 (auto.py 방식)
   const today=new Date().toLocaleDateString('ko-KR');
   const place=[siteBuilding||siteAddr, siteDetail].filter(Boolean).join(' ');
+  const ratio=Math.round(1/(DRAW_SCALE*3.7795));    // px→mm 근사 (1:N)
   $('#drawSheet').innerHTML=`
-    <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창</div>
+    <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창 &nbsp;|&nbsp; 스케일 1:${ratio}</div>
     <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)).join('')}</div>
     <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.<br>공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
   $('#drawOverlay').classList.add('show');
@@ -1223,16 +1339,16 @@ function computeSize(){
 }
 
 /* ── 커스텀 숫자 키패드 ── */
-let kpTarget=null, kpBuf='0', kpOpen=false, kpReady=false;
-function openKeypad(field){
+let kpTarget=null, kpBuf='0', kpOpen=false, kpReady=false, kpWinIdx=null;
+function openKeypad(field, winIdx){
   if(kpOpen) return;
-  kpTarget=field; kpBuf='0';
+  kpTarget=field; kpBuf='0'; kpWinIdx = (winIdx===undefined?null:winIdx);
   $('#kpLabel').textContent = field==='w'?'넓이 W':field==='h'?'높이 H':'벤트 V';
   $('#kpVal').textContent=kpBuf;
   kpOpen=true; kpReady=false; setTimeout(()=>{ kpReady=true; },380);   // 열린 직후 오터치 차단
   $('#kpOverlay').classList.add('show');
 }
-function closeKeypad(){ kpOpen=false; kpReady=false; $('#kpOverlay').classList.remove('show'); }
+function closeKeypad(){ kpOpen=false; kpReady=false; kpWinIdx=null; $('#kpOverlay').classList.remove('show'); }
 $('#kpGrid').addEventListener('click',e=>{
   if(!kpReady) return;                         // 키패드 뜬 직후엔 눌림 무시(간섭 방지)
   const b=e.target.closest('[data-k]'); if(!b)return; const k=b.dataset.k;
@@ -1244,10 +1360,15 @@ $('#kpGrid').addEventListener('click',e=>{
 $('#kpDone').addEventListener('click',()=>{
   if(!kpReady) return;
   const val=floor5(parseInt(kpBuf)||0);
-  current[kpTarget]= val||null;
-  if(kpTarget==='v'){ if(val) current.data['V']=val; else delete current.data['V']; }
-  renderSizeDisplay(); renderDiagram(); updateRatioTag(); updateMeasCount(); autosave();
-  closeKeypad();
+  const tgt = (kpWinIdx!=null) ? windows[kpWinIdx] : current;
+  if(tgt){
+    tgt[kpTarget]= val||null;
+    tgt.data = tgt.data||{};
+    if(kpTarget==='v'){ if(val) tgt.data['V']=val; else delete tgt.data['V']; }
+  }
+  if(kpWinIdx!=null){ renderConsult(); renderTray(); }
+  else { renderSizeDisplay(); renderDiagram(); updateRatioTag(); updateMeasCount(); }
+  autosave(); closeKeypad();
 });
 $('#kpOverlay').addEventListener('click',e=>{ if(e.target===$('#kpOverlay')) closeKeypad(); });
 
@@ -1310,23 +1431,45 @@ function renderMeasList(){
   const card=$('#measListCard'), box=$('#measList');
   if(!windows.length){ card.style.display='none'; box.innerHTML=''; $('#measListCnt').textContent=''; return; }
   card.style.display=''; $('#measListCnt').textContent=`${windows.length}창`;
-  box.innerHTML=windows.map((w,i)=>{ const L=winLine(w);
-    let html=`<div class="ml-row" data-edit="${i}"><div class="ml-num">[${i+1}]</div><div class="ml-txt"><b>${L.head}</b><span>${L.dims}</span></div><div class="ml-edit">수정 ›</div></div>`;
-    if(w.frame) html+=`<div class="ml-row ml-sub" data-edit="${i}"><div class="ml-num">[${i+1}-1]</div><div class="ml-txt"><b>${w.frame}</b><span>공틀</span></div><div class="ml-edit">수정 ›</div></div>`;
+  box.innerHTML=windows.map((w,i)=>{ const L=winLine(w); const act=(editingIndex===i)?' ml-active':'';
+    let html=`<div class="ml-row${act}" data-edit="${i}"><div class="ml-num">[${i+1}]</div><div class="ml-txt"><b>${L.head}</b><span>${L.dims}</span></div><button class="ml-del" data-wdel2="${i}">🗑</button><div class="ml-edit">${editingIndex===i?'수정중':'수정 ›'}</div></div>`;
+    if(w.frame) html+=`<div class="ml-row ml-sub${act}" data-edit="${i}"><div class="ml-num">[${i+1}-1]</div><div class="ml-txt"><b>${w.frame}</b><span>공틀</span></div><div class="ml-edit">›</div></div>`;
     return html;
   }).join('');
 }
 function renderTray(){
   const tray=$('#tray'); tray.innerHTML='';
-  windows.forEach((w,i)=>{ const d=document.createElement('div'); d.className='chip-done'; d.dataset.edit=i;
+  windows.forEach((w,i)=>{ const d=document.createElement('div');
+    d.className='chip-done'+((editingIndex===i)?' chip-editing':'')+((expandedIdx===i&&$('#consultTab').style.display!=='none')?' chip-open':'');
+    d.dataset.edit=i;
     d.innerHTML=`<div class="n">[${i+1}] · ${shapeLabel(w.shape)}</div><div class="p">${w.location||'(이름없음)'}</div><div class="s">${w.w||'—'}×${w.h||'—'}</div>`;
     tray.appendChild(d); });
-  const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`[${windows.length+1}] 작업 중`; tray.appendChild(cur);
+  if(editingIndex==null){
+    const cur=document.createElement('div'); cur.className='chip-cur'; cur.textContent=`[${windows.length+1}] 작업 중`; tray.appendChild(cur);
+  }
   tray.scrollLeft=tray.scrollWidth;
   renderMeasList();
 }
-$('#tray').addEventListener('click',e=>{ const c=e.target.closest('[data-edit]'); if(!c)return; editWindow(parseInt(c.dataset.edit)); });
-$('#measList').addEventListener('click',e=>{ const c=e.target.closest('[data-edit]'); if(!c)return; editWindow(parseInt(c.dataset.edit)); });
+/* 창호카드: 실측탭이면 수정, 상담탭이면 그 창 펼치기 */
+$('#tray').addEventListener('click',e=>{ const c=e.target.closest('[data-edit]'); if(!c)return;
+  const i=parseInt(c.dataset.edit);
+  if($('#consultTab').style.display!=='none'){ expandedIdx=(expandedIdx===i)?-1:i; renderConsult(); renderTray(); }
+  else editWindow(i);
+});
+$('#measList').addEventListener('click',e=>{
+  const del=e.target.closest('[data-wdel2]'); if(del){ deleteWindow(+del.dataset.wdel2); return; }
+  const c=e.target.closest('[data-edit]'); if(!c)return; editWindow(parseInt(c.dataset.edit));
+});
+/* 창 삭제 */
+function deleteWindow(i){
+  const w=windows[i]; if(!w)return;
+  if(!confirm(`[${i+1}] ${w.location||'창'} 을(를) 삭제할까요?`)) return;
+  windows.splice(i,1);
+  if(editingIndex===i){ editingIndex=null; resetForm(); }
+  else if(editingIndex!=null && editingIndex>i) editingIndex--;
+  if(expandedIdx===i) expandedIdx=-1; else if(expandedIdx>i) expandedIdx--;
+  renderTray(); renderConsult(); autosave(); toast('창 삭제됨');
+}
 
 /* 폼에 한 창 불러오기 */
 function loadIntoForm(win){
@@ -1415,11 +1558,18 @@ $('#finishBtn').addEventListener('click',()=>{
   switchTab('consult');
   toast('상담 탭으로 이동 — 창을 펼쳐 유리·옵션을 정하세요');
 });
-/* 상담 탭 저장 완료 → 기기 저장 + 요약 */
-$('#saveBtn').addEventListener('click',()=>{
+/* 상담 완료 → 검증 후 저장 + 요약 */
+$('#doneBtn').addEventListener('click',()=>{
+  const bad=windows.map((w,i)=>({i,miss:missingSpecs(w)})).filter(x=>x.miss.length);
+  if(bad.length){
+    const first=bad[0];
+    expandedIdx=first.i; renderConsult(); renderTray();
+    toast(`[${first.i+1}] ${windows[first.i].location||'창'} — ${first.miss.join(', ')} 선택 필요 (미완 ${bad.length}창)`);
+    return;
+  }
   if(!commitSession())return;
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===sessionId);
-  $('#sumLead').textContent=`${rec.label||siteName} · 총 ${rec.windows.length}개 창 · 기기에 저장됨 ✓`;
+  $('#sumLead').textContent=`${rec.label||siteName} · 총 ${rec.windows.length}개 창 · 상담 완료 ✓`;
   const list=$('#sumList'); list.innerHTML='';
   rec.windows.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
     const jub=('V' in w.data)?` · 벤트 ${w.data['V']}`:'';
