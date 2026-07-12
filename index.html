@@ -1268,7 +1268,8 @@ function bigDiagramSVG(w){
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const hasDed=(ded.W||ded.H);
   const FT="'Malgun Gothic','맑은 고딕',sans-serif";
-  const Y=DW_VIEW.h-7;
+  const botTB=(w.tongba&&w.tongba.bottom||[]).reduce((a,id)=>a+Math.max(3,tbDrawMM(id)*S),0);
+  const Y=Math.min(DW_VIEW.h-7, fy+fh+botTB+26);   // 도면 하단 + 텍스트 높이만큼
   if(hasDed){
     // tspan으로 한 줄에: 4810 x 2300 (5000x2300) -190
     const main=`${netW} x ${netH}`;
@@ -1402,7 +1403,7 @@ function frameCard(w,i){
   }
   s+=`<text x="${cx}" y="${fy+fh/2-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${code}</text>`;
   s+=`<text x="${cx}" y="${fy+fh/2+9}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${isU?'ㄷ자 공틀':'ㅁ자 공틀'}</text>`;
-  s+=`<text x="${cx}" y="${DW_VIEW.h-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
+  s+=`<text x="${cx}" y="${Math.min(DW_VIEW.h-7, fy+fh+26)}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
   s+='</svg>';
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
