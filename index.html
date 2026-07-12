@@ -256,8 +256,8 @@
   .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:8px 12px;margin-bottom:10px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;text-align:center;line-height:1.4}
   .dw-grid{display:grid;grid-template-columns:repeat(var(--dwcols,4),1fr);gap:10px;align-items:start}
   .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center;display:flex;flex-direction:column}
-  .dw-card .dw-svg{flex:1;display:flex;align-items:flex-start;justify-content:center}
-  .dw-card .dw-tags{margin-top:auto}
+  .dw-card .dw-svg{display:block}
+  .dw-card .dw-tags{margin-top:6px}
   .dw-title{font-family:var(--sans);font-size:14px;font-weight:700;color:#111;line-height:1.35;min-height:38px}
   .dw-title span{font-family:var(--mono);font-size:11.5px;font-weight:500;color:#555}
   .dw-glass{font-family:var(--mono);font-size:12.5px;font-weight:700;margin-top:2px}
@@ -1224,7 +1224,7 @@ function bigDiagramSVG(w){
   const def=SHAPE_DEFS[w.shape]||{}; const sp=w.spec||{};
   const hasScreen=!!(sp.screen&&sp.screen!=='없음');
   const isMist=(sp.color==='미스트'), isMoru=(sp.color==='모루');
-  let s=`<svg viewBox="0 0 ${DW_VIEW.w} ${DW_VIEW.h}" shape-rendering="crispEdges">${glassHatchDefs()}`;
+  let s=`__SVGOPEN__${glassHatchDefs()}`;
   const t=w.tongba||{};
   const band=(x,y,ww,hh,col)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" fill="${col}" stroke="#000" stroke-width="1.2"/>`;
   const vlab=(x,y,txt,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="7" font-weight="700" fill="${col||'#000'}" transform="rotate(-90 ${x} ${y})" shape-rendering="auto">${txt}</text>`;
@@ -1275,13 +1275,16 @@ function bigDiagramSVG(w){
     const main=`${netW} x ${netH}`;
     const orig=`(${w.w}x${w.h})`;
     const dedTxt=[ded.W?`-${ded.W}`:'', ded.H?`-${ded.H}(H)`:'' ].filter(Boolean).join(' ');
-    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${main}` +
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="19" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${main}` +
        `<tspan font-size="15" font-weight="600" fill="#6B7280" dx="6">${orig}</tspan>` +
        `<tspan font-size="15" font-weight="700" fill="#DC2626" dx="5">${dedTxt}</tspan></text>`;
   } else {
-    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${w.w||'—'} x ${w.h||'—'}</text>`;
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="19" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${w.w||'—'} x ${w.h||'—'}</text>`;
   }
   s+='</svg>';
+  // ★ viewBox 높이를 실제 내용까지로 잘라냄 → 아래 요소(옵션박스)가 균일 간격으로 따라붙음
+  const vbH=Math.ceil(Y+8);
+  s=s.replace('__SVGOPEN__', `<svg viewBox="0 0 ${DW_VIEW.w} ${vbH}" shape-rendering="crispEdges">`);
   return s;
 }
 /* 유리사양 표시 — 단창/이중창별 + 미스트/모루 반영 위치 */
@@ -1392,7 +1395,7 @@ function frameCard(w,i){
   fw=Math.max(20,fw); fh=Math.max(20,fh);
   const cx=DW_VIEW.cx, fx=cx-fw/2, fy=DW_VIEW.top+12;   // 창 카드와 동일 기준선
   const b=Math.max(4,60*1.5*TB_W*S);   // 공틀 밴드 두께
-  let s=`<svg viewBox="0 0 ${DW_VIEW.w} ${DW_VIEW.h}" shape-rendering="crispEdges">`;
+  let s='__FSVGOPEN__';
   // 액자형: 바깥 사각 - 안쪽 사각 (내부 분할선 없음)
   if(isU){
     // ㄷ자: 하단 열림 → 좌·상·우만
@@ -1403,8 +1406,10 @@ function frameCard(w,i){
   }
   s+=`<text x="${cx}" y="${fy+fh/2-8}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${code}</text>`;
   s+=`<text x="${cx}" y="${fy+fh/2+9}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${isU?'ㄷ자 공틀':'ㅁ자 공틀'}</text>`;
-  s+=`<text x="${cx}" y="${Math.min(DW_VIEW.h-7, fy+fh+42)}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="21" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
+  const fY=Math.min(DW_VIEW.h-7, fy+fh+42);
+  s+=`<text x="${cx}" y="${fY}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="19" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${netW} x ${netH}</text>`;
   s+='</svg>';
+  s=s.replace('__FSVGOPEN__', `<svg viewBox="0 0 ${DW_VIEW.w} ${Math.ceil(fY+8)}" shape-rendering="crispEdges">`);
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
     <div class="dw-glass">&nbsp;</div>
