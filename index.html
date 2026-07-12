@@ -269,6 +269,21 @@
   .cust-gate span{font-size:12px;color:var(--ink-2);opacity:.75}
   #measureTab.locked .card{opacity:.5;pointer-events:none}
   #measureTab.locked .cust-gate{opacity:1;pointer-events:auto}
+  .tsum-card{background:#FBFDFC;border:1.5px solid #0B7A3B !important}
+  .tsum-card .dw-title{color:#0B7A3B}
+  .tsum-body{flex:1;text-align:left;margin-top:2px}
+  .tsum-blk{margin-bottom:9px}
+  .tsum-h{display:flex;align-items:center;gap:4px;font-family:'Malgun Gothic',var(--sans);font-size:11.5px;padding:3px 0}
+  .tsum-h b{font-weight:700;color:#111}
+  .tsum-code{font-family:var(--mono);font-size:9.5px;color:#6B7280}
+  .tsum-sw{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid #333;flex:none}
+  .tsum-table{width:100%;border-collapse:collapse;font-family:'Malgun Gothic',var(--sans);font-size:11px}
+  .tsum-table td{padding:3px 6px;border-bottom:1px dotted #DCE7E2}
+  .tsum-l{font-family:var(--mono);font-weight:600;color:#1E3A8A}
+  .tsum-l::before{content:"_ ";color:#9CA3AF}
+  .tsum-c{text-align:right;font-family:var(--mono);font-weight:700;color:#111}
+  .tsum-sub td{border-bottom:none;background:#F2F8F5;font-size:10px;color:#0B7A3B;font-weight:700;padding:3px 6px}
+  .tsum-grand{margin-top:6px;padding:7px;background:#0B7A3B;color:#fff;font-family:'Malgun Gothic',var(--sans);font-size:11.5px;font-weight:700;text-align:center}
   .dw-tags{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:5px}
   .dw-tag{font-family:'Malgun Gothic',var(--sans);font-size:10px;font-weight:600;padding:2.5px 6px;border-radius:4px;background:#F1F3F5;color:#6B7280;border:1px solid #E5E7EB}
   .dw-tag-hi{background:#FEF3C7;color:#92400E;border-color:#FCD34D}      /* 표준과 다름 */
@@ -614,6 +629,7 @@ const JAPYEONG_PRICE={
   '터닝도어':{p:350000,u:'EA'},'PJ창':{p:15000,u:'자평'}
 };
 const TONGBA_UNIT_PRICE=15000; // 통바 원/m
+const FRAME_UNIT_PRICE=18000;  // 공틀 원/m
 function calcJapyeong(w,h){ return Math.max(15, (w*h)/90000); }  // 최소 15자평
 
 /* 시공비 (단위: 만원) */
@@ -1023,11 +1039,16 @@ function tongbaSection(w,i){
 }
 /* 상담탭 실시간 도면 (형태·방향·비율·통바 반영) */
 function winDiagramSVG(w){
-  // 상담 도면 = 출력 도면과 동일 렌더러 (각진 선 + 정보 표기 + 옵션 실시간 반영)
+  // 상담 도면 = 출력 도면과 동일 렌더러 (통바 포함해 화면에 맞게 자동 축소)
   const prev=DRAW_SCALE;
   const ded=tongbaDeduct(w);
-  const nw=Math.max(1,(w.w||1000)-ded.W), nh=Math.max(1,(w.h||1000)-ded.H);
-  DRAW_SCALE=Math.min(DW_VIEW.availW/Math.max(nw,600), DW_VIEW.availH/Math.max(nh,600));
+  const nw=Math.max(600,(w.w||1000)-ded.W), nh=Math.max(600,(w.h||1000)-ded.H);
+  const t=w.tongba||{};
+  const sumMM=(arr)=>(arr||[]).reduce((s,id)=>s+tbDrawMM(id),0);
+  const extraW=sumMM(t.left)+sumMM(t.right);      // 통바가 좌우로 삐져나가는 mm
+  const extraH=sumMM(t.top)+sumMM(t.bottom);
+  // 통바까지 포함한 전체가 영역 안에 들어오도록
+  DRAW_SCALE=Math.min(DW_VIEW.availW/(nw+extraW), DW_VIEW.availH/(nh+extraH));
   const svg=bigDiagramSVG(w);
   DRAW_SCALE=prev;
   return svg;
@@ -1092,8 +1113,11 @@ function missingSpecs(w){
 let DRAW_SCALE=1;
 const DW_VIEW={w:340,h:300, availW:300, availH:215, top:32, cx:170};   // 도면 영역(크게)
 function computeDrawScale(){
-  const maxW=Math.max(2500, ...windows.map(w=>(w.w||0)));
-  const maxH=Math.max(2500, ...windows.map(w=>(w.h||0)));
+  const sumMM=(arr)=>(arr||[]).reduce((s,id)=>s+tbDrawMM(id),0);
+  const spanW=w=>{const t=w.tongba||{}; const d=tongbaDeduct(w); return Math.max(0,(w.w||0)-d.W)+sumMM(t.left)+sumMM(t.right);};
+  const spanH=w=>{const t=w.tongba||{}; const d=tongbaDeduct(w); return Math.max(0,(w.h||0)-d.H)+sumMM(t.top)+sumMM(t.bottom);};
+  const maxW=Math.max(2500, ...windows.map(spanW));
+  const maxH=Math.max(2500, ...windows.map(spanH));
   DRAW_SCALE=Math.min(DW_VIEW.availW/maxW, DW_VIEW.availH/maxH);
 }
 /* 유리 해칭 (미스트=도트, 모루=세로줄) */
@@ -1200,8 +1224,14 @@ function bigDiagramSVG(w){
     s+=scr(cx,fy+14);
   }
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
-  const sizeTxt = (ded.W||ded.H) ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
-  s+=`<text x="${cx}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+  const hasDed=(ded.W||ded.H);
+  const sizeTxt = hasDed ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
+  if(hasDed){
+    s+=`<text x="${cx-22}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+    s+=`<text x="${cx+56}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="11" font-weight="600" fill="#6B7280" shape-rendering="auto">(실측 ${w.w}x${w.h})</text>`;
+  } else {
+    s+=`<text x="${cx}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+  }
   s+='</svg>';
   return s;
 }
@@ -1253,6 +1283,40 @@ function optionTags(w){
     else add(o,'dw-tag-none');
   });
   return `<div class="dw-tags">${tags.length?tags.join(''):'<span class="dw-tag" style="visibility:hidden">-</span>'}</div>`;
+}
+/* 통바 집계 (발주용) — 종류별 · 길이별 개수 (공틀 제외) */
+function tongbaSummary(){
+  const acc={};   // id → { length(mm) → count }
+  windows.forEach(w=>{
+    const t=w.tongba||{};
+    ['left','right'].forEach(f=>(t[f]||[]).forEach(id=>{
+      const L=w.h||0; acc[id]=acc[id]||{}; acc[id][L]=(acc[id][L]||0)+1; }));
+    ['top','bottom'].forEach(f=>(t[f]||[]).forEach(id=>{
+      const L=w.w||0; acc[id]=acc[id]||{}; acc[id][L]=(acc[id][L]||0)+1; }));
+  });
+  const ids=Object.keys(acc);
+  if(!ids.length) return '';
+  let blocks='', grand=0, grandCnt=0;
+  ids.forEach(id=>{
+    const tb=TONGBA[id];
+    const lens=Object.keys(acc[id]).map(Number).sort((a,b)=>b-a);
+    let rows='', sub=0, subCnt=0;
+    lens.forEach(L=>{ const n=acc[id][L]; sub+=L*n; subCnt+=n;
+      rows+=`<tr><td class="tsum-l">${L}</td><td class="tsum-c">${n}개</td></tr>`; });
+    grand+=sub; grandCnt+=subCnt;
+    blocks+=`<div class="tsum-blk">
+      <div class="tsum-h"><span class="tsum-sw" style="background:${tb.color}"></span><b>${tb.label}</b><span class="tsum-code">(${tb.code.replace('CB-','')})</span></div>
+      <table class="tsum-table">${rows}
+        <tr class="tsum-sub"><td>소계 ${(sub/1000).toFixed(2)}m</td><td class="tsum-c">${subCnt}개</td></tr>
+      </table></div>`;
+  });
+  return `<div class="dw-card tsum-card">
+    <div class="dw-title">📦 통바 집계 <span>발주용 · 종류별 길이/수량</span></div>
+    <div class="dw-glass">&nbsp;</div>
+    <div class="tsum-body">${blocks}</div>
+    <div class="tsum-grand">합계 ${grandCnt}개 · ${(grand/1000).toFixed(2)} m</div>
+    <div class="dw-tags"><span class="dw-tag" style="visibility:hidden">-</span></div>
+  </div>`;
 }
 function drawCard(w,i){
   const sp=w.spec||{};
@@ -1315,7 +1379,7 @@ function openDrawing(){
   const ratio=Math.round(1/(DRAW_SCALE*3.7795));
   $('#drawSheet').innerHTML=`
     <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창 &nbsp;|&nbsp; 스케일 1:${ratio}</div>
-    <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)+frameCard(w,i)).join('')}</div>
+    <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)+frameCard(w,i)).join('')}${tongbaSummary()}</div>
     <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.<br>공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
   applyPaper();
   $('#drawOverlay').classList.add('show');
@@ -1337,12 +1401,20 @@ function calcQuote(floor,chulType,region){
     return {i,w,base,unit,byBrand};
   });
   // 통바(공통 자재, 계수 미적용)
+  // 통바 (공틀 제외)
   let tLen=0; windows.forEach(w=>{ const t=w.tongba||{};
     ['left','right'].forEach(f=>(t[f]||[]).forEach(()=>tLen+=(w.h||0)/1000));
-    ['top','bottom'].forEach(f=>(t[f]||[]).forEach(()=>tLen+=(w.w||0)/1000)); });
+    ['top','bottom'].forEach(f=>(t[f]||[]).forEach(()=>tLen+=(w.w||0)/1000));
+  });
   const tongbaBase=Math.round(tLen*TONGBA_UNIT_PRICE);
-  const tongbaByBrand=BRANDS.map(b=>Math.round(tongbaBase*b.coef/100));   // 통바·공틀도 제품 → 계수 적용
-  const matByBrand=BRANDS.map((b,bi)=>rows.reduce((s,r)=>s+r.byBrand[bi],0)+tongbaByBrand[bi]);
+  const tongbaByBrand=BRANDS.map(b=>Math.round(tongbaBase*b.coef/100));
+  // 공틀 (별도 항목, 18,000/m)
+  let fLen=0; windows.forEach(w=>{ if(!w.frame)return;
+    const d=tongbaDeduct(w); const nw=((w.w||0)-d.W)/1000, nh=((w.h||0)-d.H)/1000;
+    fLen += /ㄷ자/.test(w.frame) ? (nw+nh*2) : (nw*2+nh*2); });
+  const frameBase=Math.round(fLen*FRAME_UNIT_PRICE);
+  const frameByBrand=BRANDS.map(b=>Math.round(frameBase*b.coef/100));
+  const matByBrand=BRANDS.map((b,bi)=>rows.reduce((s,r)=>s+r.byBrand[bi],0)+tongbaByBrand[bi]+frameByBrand[bi]);
   const teul=windows.length;
   const yang=yangjungCost(Math.max(1,floor||1),teul)*10000;
   const chul=chulgeoCost(teul,chulType||'AL')*10000;
@@ -1352,7 +1424,7 @@ function calcQuote(floor,chulType,region){
   const totalByBrand=matByBrand.map(m=>m+constTotal);          // 공급가 (자재+시공)
   const vatByBrand=totalByBrand.map(v=>Math.round(v*0.1));      // 부가세 10%
   const finalByBrand=totalByBrand.map((v,i)=>v+vatByBrand[i]);  // 최종
-  return {rows,tLen,tongbaBase,tongbaByBrand,matByBrand,yang,chul,boyang,reg,constTotal,totalByBrand,vatByBrand,finalByBrand,teul};
+  return {rows,tLen,tongbaBase,tongbaByBrand,fLen,frameBase,frameByBrand,matByBrand,yang,chul,boyang,reg,constTotal,totalByBrand,vatByBrand,finalByBrand,teul};
 }
 function renderQuote(){
   if(!windows.length){ toast('견적낼 창이 없어요'); return; }
@@ -1363,7 +1435,8 @@ function renderQuote(){
   Q.rows.forEach(r=>{
     table+=`<tr><td class="q-left">[${r.i+1}] ${r.w.location||'창'}<br><span style="font-family:var(--mono);font-weight:400;color:#888">${r.w.product||''} ${r.w.w}×${r.w.h} · ${r.unit}</span></td>${r.byBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   });
-  if(Q.tongbaBase>0) table+=`<tr><td class="q-left">통바·공틀 ${Q.tLen.toFixed(2)}m</td>${Q.tongbaByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  if(Q.tongbaBase>0) table+=`<tr><td class="q-left">통바 ${Q.tLen.toFixed(2)}m <span style="font-weight:400;color:#888">(15,000/m)</span></td>${Q.tongbaByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  if(Q.frameBase>0) table+=`<tr><td class="q-left">공틀 ${Q.fLen.toFixed(2)}m <span style="font-weight:400;color:#888">(18,000/m)</span></td>${Q.frameByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-mat"><td class="q-left">자재비 합계</td>${Q.matByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-const-row"><td class="q-left">시공비 (공통)</td>${BRANDS.map(()=>`<td>${won(Q.constTotal)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-sum"><td class="q-left">합계 (공급가)</td>${Q.totalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
