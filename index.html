@@ -290,17 +290,32 @@
   .dw-tag-add{background:#DBEAFE;color:#1E40AF;border-color:#93C5FD}     /* 추가옵션 적용 */
   .dw-tag-none{background:#fff;color:#D1D5DB;border-color:#F3F4F6;text-decoration:line-through}  /* 미적용 */
   .dw-tag-off{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5}     /* 망 없음 */
-  .dw-opts{display:flex;gap:5px}
+  .dw-opts{display:flex;gap:6px;align-items:center}
   .dw-opts select{font-family:var(--sans);font-size:12px;font-weight:600;padding:8px 6px;border:1px solid var(--hair);border-radius:8px;background:var(--surface)}
+  .dw-scale{display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:2px}
+  .dw-scale button{width:26px;height:26px;border:none;background:transparent;font-size:15px;font-weight:700;color:var(--brand);border-radius:6px}
+  .dw-scale button:active{background:var(--brand-soft)}
+  .dw-scale span{font-family:var(--mono);font-size:11px;font-weight:700;min-width:38px;text-align:center;color:var(--ink)}
+  .dw-pageinfo{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);padding:0 4px}
+  .dw-pageinfo.warn{color:#B45309}
+  .dw-exports{display:flex;gap:5px}
+  .dw-exports button{font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:9px;border:none;background:var(--ink);color:#fff}
+  .dw-exports button:active{opacity:.85}
+  /* 줌 반영 */
+  #drawSheet{--dwzoom:1}
+  #drawSheet .dw-card{font-size:calc(1em * var(--dwzoom))}
+  #drawSheet .dw-svg svg{transform:scale(var(--dwzoom));transform-origin:top center}
+  #drawSheet .dw-svg{overflow:visible}
   .dw-slogan{margin-top:16px;padding:12px;background:#fff;border:1px dashed #bbb;border-radius:0;font-family:var(--sans);font-size:11px;font-weight:600;color:#C0392B;text-align:center;line-height:1.6}
   @page{size:A3 landscape;margin:8mm}
   @media print {
     body>*{display:none !important}
-    .draw-overlay{display:flex !important;position:static}
+    .draw-overlay.show{display:flex !important;position:static}
     .dw-noprint{display:none !important}
     .dw-sheet{overflow:visible;background:#fff;padding:0}
     .dw-grid{gap:6px}
     .dw-card{border-color:#999}
+    .q-cond{display:none !important}
   }
   /* 견적서 */
   .q-cond{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:12px 14px;margin-bottom:14px}
@@ -502,9 +517,17 @@
     <div class="dw-opts">
       <select id="dwPaper"><option value="A4">A4</option><option value="A3" selected>A3</option></select>
       <select id="dwOrient"><option value="landscape" selected>가로</option><option value="portrait">세로</option></select>
-      <select id="dwCols"><option value="2">2단</option><option value="3">3단</option><option value="4" selected>4단</option></select>
+      <div class="dw-scale">
+        <button id="dwZoomOut">−</button>
+        <span id="dwScaleLabel">100%</span>
+        <button id="dwZoomIn">＋</button>
+      </div>
+      <span class="dw-pageinfo" id="dwPageInfo"></span>
     </div>
-    <button id="drawPrint">🖨 인쇄 / PDF</button>
+    <div class="dw-exports">
+      <button id="drawPdf">📄 PDF</button>
+      <button id="drawPng">🖼 PNG</button>
+    </div>
   </div>
   <div class="dw-sheet" id="drawSheet"></div>
 </div>
@@ -512,8 +535,14 @@
 <div class="draw-overlay" id="quoteOverlay">
   <div class="dw-topbar dw-noprint">
     <button id="quoteClose">✕ 닫기</button>
-    <span>브랜드별 견적서</span>
-    <button id="quotePrint">🖨 인쇄 / PDF</button>
+    <div class="dw-opts">
+      <select id="qPaper"><option value="A4" selected>A4</option><option value="A3">A3</option></select>
+      <select id="qOrient"><option value="portrait">세로</option><option value="landscape" selected>가로</option></select>
+    </div>
+    <div class="dw-exports">
+      <button id="quotePdf">📄 PDF</button>
+      <button id="quotePng">🖼 PNG</button>
+    </div>
   </div>
   <div class="dw-sheet">
     <div class="q-cond dw-noprint">
@@ -599,10 +628,10 @@ const CONSULT_OPTS={
   G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드','아르곤가스']},
   G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
   FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
-  TD:{thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음','아르곤가스']},
+  TD:{door:['미는문','당기는문'],thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음','아르곤가스']},
   PJ:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:['없음','롤방충망'],opts:['없음','아르곤가스']}
 };
-const SPEC_LABELS={thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
+const SPEC_LABELS={door:'문 방향',thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
 const BRANDS=[
   {id:'kcc_villaz',brand:'KCC홈씨씨완성창',line:'HW_ONE 빌라즈',coef:110, brandFull:'KCC글라스완성창', lineFull:'HW_ONE (빌라즈)'},
@@ -697,7 +726,7 @@ function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id;
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 let siteName='', custPhone='', siteAddr='', siteBuilding='', siteDetail='', sessionId=null, editingIndex=null;
-function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[]}}; }
+function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[],door:''}}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -990,7 +1019,7 @@ function specSection(w,i){
     if(key==='opts') lbl += ' <span style="font-weight:400;opacity:.7">(복수 선택 가능)</span>';
     return `<div class="c-sub">${lbl}</div><div class="spec-chips">${chips}</div>`;
   };
-  return ['thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
+  return ['door','thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
 }
 /* 상담탭에서 사이즈 직접 편집 (실측탭 안 가도 됨) */
 function sizeEditor(w,i){
@@ -1064,7 +1093,7 @@ $('#consultList').addEventListener('click',e=>{
   const cs=e.target.closest('[data-csize]');
   if(cs){ openKeypad(cs.dataset.csize, i); return; }                  // 상담탭 사이즈 수정
   const pc=e.target.closest('[data-prodc]');
-  if(pc){ w.product=(w.product===pc.dataset.prodc)?'':pc.dataset.prodc; w.spec={thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[]}; renderConsult(); renderTray(); autosave(); return; }
+  if(pc){ w.product=(w.product===pc.dataset.prodc)?'':pc.dataset.prodc; w.spec={thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[],door:''}; renderConsult(); renderTray(); autosave(); return; }
   const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]');
   const tf=e.target.closest('[data-tface]'),tdel=e.target.closest('[data-tdel]'),fr=e.target.closest('[data-framec]');
   const sp=e.target.closest('[data-spec]');
@@ -1097,6 +1126,7 @@ function missingSpecs(w){
   if(!grp) return miss;
   const O=CONSULT_OPTS[grp], sp=w.spec||{}, dbl=isDoubleWin(w.product);
   const need=[['thick','유리두께'],['outer','유리사양'],['gap','간봉']];
+  if(O.door && O.door.length) need.unshift(['door','문 방향']);
   if(dbl && O.inner && O.inner.length) need.push(['inner','내측유리']);
   if(O.lock && O.lock.length) need.push(['lock','잠금장치']);
   if(O.screen && O.screen.length) need.push(['screen','방충망']);
@@ -1203,9 +1233,10 @@ function bigDiagramSVG(w){
   const sym=(x,y,txt,size,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="${size||14}" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
   const scr=(x,y)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="12" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
   const vtxt=(x,y)=>('V' in w.data)?`<text x="${x}" y="${y}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`:'';
-  if(def.handle){                                       // 터닝도어: 핸들 모양
+  if(def.handle){                                       // 터닝도어: 핸들 모양 + 문 방향
     const hx = w.side==='좌' ? fx+8 : fx+fw-8;
     s+=doorHandle(hx,ym,w.side);
+    if(sp.door) s+=`<text x="${cx}" y="${fy+fh+13}" text-anchor="middle" font-family="${"'Malgun Gothic','맑은 고딕',sans-serif"}" font-size="11" font-weight="700" fill="#111" shape-rendering="auto">${sp.door} / ${w.side}핸들</text>`;
   } else if(w.shape==='3W'||w.shape==='3WU'){           // 3W/3WU: 좌=▶, 우=◀ (텍스트 없음)
     const r=(w.shape==='3WU')?ubRatio(w):0.25;
     const lx=fx+fw*(r/2), rx=fx+fw*(1-r/2);
@@ -1369,17 +1400,80 @@ function frameCard(w,i){
     <div class="dw-tags"><span class="dw-tag" style="visibility:hidden">-</span></div>
   </div>`;
 }
+/* ===== 출력 옵션 엔진 ===== */
+const PAPER_MM={A4:{w:210,h:297},A3:{w:297,h:420}};
+let dwZoom=1.0;   // 스케일 배율 (auto.py의 scale 옵션 역할)
+function paperSize(id,orient){
+  const p=PAPER_MM[id]||PAPER_MM.A3;
+  return orient==='landscape' ? {w:p.h,h:p.w} : {w:p.w,h:p.h};
+}
 function applyPaper(){
-  const paper=$('#dwPaper').value, orient=$('#dwOrient').value, cols=$('#dwCols').value;
+  const paper=$('#dwPaper').value, orient=$('#dwOrient').value;
+  const P=paperSize(paper,orient);
+  const usableW=P.w-16;                       // 여백 8mm x2
+  const cardMM=52*dwZoom;                     // 카드 1개 기본 폭(mm) × 배율
+  const cols=Math.max(1, Math.min(8, Math.floor(usableW/cardMM)));
   let st=document.getElementById('dwPageStyle');
   if(!st){ st=document.createElement('style'); st.id='dwPageStyle'; document.head.appendChild(st); }
   st.textContent=`@page{size:${paper} ${orient};margin:8mm}`;
-  $('#drawSheet').style.setProperty('--dwcols', cols);
+  const sheet=$('#drawSheet');
+  sheet.style.setProperty('--dwcols', cols);
+  sheet.style.setProperty('--dwzoom', dwZoom);
+  $('#dwScaleLabel').textContent=Math.round(dwZoom*100)+'%';
+  // 페이지 수 추정
+  const total=document.querySelectorAll('#drawSheet .dw-card').length;
+  const rows=Math.ceil(total/cols);
+  const rowMM=76*dwZoom;
+  const perPage=Math.max(1,Math.floor((P.h-30)/rowMM));
+  const pages=Math.max(1,Math.ceil(rows/perPage));
+  $('#dwPageInfo').textContent=`${cols}단 · ${pages}p`;
+  $('#dwPageInfo').classList.toggle('warn', pages>1);
 }
+$('#dwZoomIn').addEventListener('click',()=>{ dwZoom=Math.min(2.0, +(dwZoom+0.1).toFixed(2)); applyPaper(); });
+$('#dwZoomOut').addEventListener('click',()=>{ dwZoom=Math.max(0.5, +(dwZoom-0.1).toFixed(2)); applyPaper(); });
+
+/* PNG 저장 — SVG를 캔버스로 래스터화 */
+async function exportPNG(rootSel, filename){
+  const root=$(rootSel);
+  toast('PNG 생성 중…');
+  const w=root.scrollWidth, h=root.scrollHeight;
+  // foreignObject로 HTML 전체를 SVG에 담아 렌더
+  const cs=[...document.styleSheets].map(ss=>{ try{ return [...ss.cssRules].map(r=>r.cssText).join('\n'); }catch(e){ return ''; } }).join('\n');
+  const clone=root.cloneNode(true);
+  clone.querySelectorAll('.dw-noprint').forEach(e=>e.remove());
+  const html=`<div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;background:#fff">${clone.innerHTML}</div>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><style>${cs}</style><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
+  const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    const S=2;                            // 2x 해상도
+    c.width=w*S; c.height=h*S;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.scale(S,S); ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    c.toBlob(b=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b); a.download=filename; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      toast('PNG 저장 완료 ✓');
+    },'image/png');
+  };
+  img.onerror=()=>{ toast('PNG 실패 — PDF를 사용하세요'); URL.revokeObjectURL(url); };
+  img.src=url;
+}
+function fileBase(){
+  const place=(siteBuilding||siteName||'현장').replace(/[\\/:*?"<>|]/g,'');
+  const d=new Date(); const ymd=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  return `${ymd}_${place}`;
+}
+
 function openDrawing(){
   if(!windows.length){ toast('출력할 창이 없어요'); return; }
-  computeDrawScale();                               // ★ 전체 공통 스케일 (auto.py 방식)
-  computeCommonOptions();                           // ★ 옵션 시인성 기준
+  computeDrawScale();
+  computeCommonOptions();
   const today=new Date().toLocaleDateString('ko-KR');
   const place=[siteBuilding||siteAddr, siteDetail].filter(Boolean).join(' ');
   const ratio=Math.round(1/(DRAW_SCALE*3.7795));
@@ -1390,10 +1484,11 @@ function openDrawing(){
   applyPaper();
   $('#drawOverlay').classList.add('show');
 }
-['#dwPaper','#dwOrient','#dwCols'].forEach(id=>$(id).addEventListener('change',applyPaper));
+['#dwPaper','#dwOrient'].forEach(id=>$(id).addEventListener('change',applyPaper));
 $('#drawBtn').addEventListener('click',openDrawing);
 $('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
-$('#drawPrint').addEventListener('click',()=>window.print());
+$('#drawPdf').addEventListener('click',()=>{ document.body.classList.add('printing-draw'); window.print(); setTimeout(()=>document.body.classList.remove('printing-draw'),500); });
+$('#drawPng').addEventListener('click',()=>exportPNG('#drawSheet', fileBase()+'_도면.png'));
 
 /* ===== 견적서 (브랜드별 비교) ===== */
 const BRAND_COLORS={kcc_villaz:'#0B4DA2',kcc_5i:'#2E7CC4',kcc_deal:'#16386E',lx_full:'#00A651',lx_deal:'#6FB544',hanssem:'#F26F21'};
@@ -1466,7 +1561,15 @@ function renderQuote(){
 BRANDS.length && (function(){ const sel=$('#qRegion'); if(sel) Object.keys(REGION_COSTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=`${k.split('/')[0]}… (${REGION_COSTS[k]}만)`; sel.appendChild(o); }); })();
 $('#quoteBtn').addEventListener('click',()=>{ renderQuote(); $('#quoteOverlay').classList.add('show'); });
 $('#quoteClose').addEventListener('click',()=>$('#quoteOverlay').classList.remove('show'));
-$('#quotePrint').addEventListener('click',()=>window.print());
+function applyQuotePaper(){
+  const paper=$('#qPaper').value, orient=$('#qOrient').value;
+  let st=document.getElementById('qPageStyle');
+  if(!st){ st=document.createElement('style'); st.id='qPageStyle'; document.head.appendChild(st); }
+  st.textContent=`@page{size:${paper} ${orient};margin:10mm}`;
+}
+['#qPaper','#qOrient'].forEach(id=>$(id).addEventListener('change',applyQuotePaper));
+$('#quotePdf').addEventListener('click',()=>{ applyQuotePaper(); document.body.classList.add('printing-quote'); window.print(); setTimeout(()=>document.body.classList.remove('printing-quote'),500); });
+$('#quotePng').addEventListener('click',()=>exportPNG('#quoteBody', fileBase()+'_견적서.png'));
 ['#qFloor','#qChul','#qRegion'].forEach(id=>$(id).addEventListener('input',renderQuote));
 
 /* ===== 3 형태 ===== */
