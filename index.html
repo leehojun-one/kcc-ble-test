@@ -256,7 +256,7 @@
   .dw-headerbar{background:#fff;border:2px solid #1E3A8A;border-radius:0;padding:11px 14px;margin-bottom:14px;font-family:var(--sans);font-size:13px;font-weight:700;color:#111;text-align:center;line-height:1.5}
   .dw-grid{display:grid;grid-template-columns:repeat(var(--dwcols,4),1fr);gap:10px;align-items:start}
   .dw-card{background:#fff;border:1px solid #999;border-radius:0;padding:10px 8px 8px;break-inside:avoid;text-align:center}
-  .dw-title{font-family:var(--sans);font-size:14px;font-weight:700;color:#111;line-height:1.35}
+  .dw-title{font-family:var(--sans);font-size:14px;font-weight:700;color:#111;line-height:1.35;min-height:38px}
   .dw-title span{font-family:var(--mono);font-size:11.5px;font-weight:500;color:#555}
   .dw-glass{font-family:var(--mono);font-size:12.5px;font-weight:700;margin-top:2px}
   .dw-svg{margin:2px 0}
@@ -298,7 +298,10 @@
   .q-table th{background:#F1F3F3;font-weight:700;text-align:center;font-size:10px}
   .q-table td.q-left{text-align:left;font-family:var(--sans);font-weight:600}
   .q-table tr.q-mat td{background:#F7FAF8}
-  .q-table tr.q-total td{background:#0B7A3B;color:#fff;font-weight:700;font-size:12px}
+  .q-table tr.q-const-row td{background:#F8FAFC;color:#475569}
+  .q-table tr.q-sum td{background:#EEF2FF;font-weight:700;color:#1E3A8A}
+  .q-table tr.q-vat td{background:#FEFCE8;color:#854D0E}
+  .q-table tr.q-total td{background:#0B7A3B;color:#fff;font-weight:700;font-size:13px;padding:9px 4px}
   .q-const{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:12px 14px;margin-top:14px;font-family:var(--mono);font-size:12px;line-height:1.9}
   .q-const b{font-family:var(--sans)}
   .q-const .q-crow{display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:2px 0}
@@ -1246,7 +1249,7 @@ function drawCard(w,i){
   const typeLabel = shapeLabel(w.shape)+((SHAPE_DEFS[w.shape]||{}).unbalanced?'(U/B)':'');
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}] ${w.location||'창'}<br><span>${brandCode||w.product||''} / ${typeLabel}</span></div>
-    ${glassTxt?`<div class="dw-glass" style="color:${glassColor(glassTxt)}">${glassTxt}</div>`:''}
+    <div class="dw-glass" style="color:${glassColor(glassTxt)}">${glassTxt||'&nbsp;'}</div>
     <div class="dw-svg">${bigDiagramSVG(w)}</div>
     ${optionTags(w)}
   </div>`;
@@ -1279,6 +1282,7 @@ function frameCard(w,i){
   s+='</svg>';
   return `<div class="dw-card">
     <div class="dw-title">[${i+1}-1] ${w.location||'창'}<br><span>공틀 / ${f}</span></div>
+    <div class="dw-glass">&nbsp;</div>
     <div class="dw-svg">${s}</div>
   </div>`;
 }
@@ -1332,8 +1336,10 @@ function calcQuote(floor,chulType,region){
   const boyang=(teul<=6?9:18)*10000;
   const reg=(region&&REGION_COSTS[region]?REGION_COSTS[region]:0)*10000;
   const constTotal=yang+chul+boyang+reg;
-  const totalByBrand=matByBrand.map(m=>m+constTotal);
-  return {rows,tLen,tongbaBase,tongbaByBrand,matByBrand,yang,chul,boyang,reg,constTotal,totalByBrand,teul};
+  const totalByBrand=matByBrand.map(m=>m+constTotal);          // 공급가 (자재+시공)
+  const vatByBrand=totalByBrand.map(v=>Math.round(v*0.1));      // 부가세 10%
+  const finalByBrand=totalByBrand.map((v,i)=>v+vatByBrand[i]);  // 최종
+  return {rows,tLen,tongbaBase,tongbaByBrand,matByBrand,yang,chul,boyang,reg,constTotal,totalByBrand,vatByBrand,finalByBrand,teul};
 }
 function renderQuote(){
   if(!windows.length){ toast('견적낼 창이 없어요'); return; }
@@ -1346,7 +1352,10 @@ function renderQuote(){
   });
   if(Q.tongbaBase>0) table+=`<tr><td class="q-left">통바·공틀 ${Q.tLen.toFixed(2)}m</td>${Q.tongbaByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-mat"><td class="q-left">자재비 합계</td>${Q.matByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
-  table+=`<tr class="q-total"><td class="q-left" style="color:#fff">총액 (자재+시공)</td>${Q.totalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-const-row"><td class="q-left">시공비 (공통)</td>${BRANDS.map(()=>`<td>${won(Q.constTotal)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-sum"><td class="q-left">합계 (공급가)</td>${Q.totalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-vat"><td class="q-left">부가세 (10%)</td>${Q.vatByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  table+=`<tr class="q-total"><td class="q-left" style="color:#fff">최종 견적 (VAT 포함)</td>${Q.finalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+='</table>';
   const cst=`<div class="q-const"><b>시공비 (브랜드 공통)</b>
     <div class="q-crow"><span>양중비 (${floor}층·${Q.teul}틀)</span><span>${won(Q.yang)}</span></div>
