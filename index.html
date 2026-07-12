@@ -1225,12 +1225,18 @@ function bigDiagramSVG(w){
   }
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const hasDed=(ded.W||ded.H);
-  const sizeTxt = hasDed ? `${netW} x ${netH}` : `${w.w||'—'} x ${w.h||'—'}`;
+  const FT="'Malgun Gothic','맑은 고딕',sans-serif";
+  const Y=DW_VIEW.h-12;
   if(hasDed){
-    s+=`<text x="${cx-22}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
-    s+=`<text x="${cx+56}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="11" font-weight="600" fill="#6B7280" shape-rendering="auto">(실측 ${w.w}x${w.h})</text>`;
+    // tspan으로 한 줄에: 4810 x 2300 (5000x2300) -190
+    const main=`${netW} x ${netH}`;
+    const orig=`(${w.w}x${w.h})`;
+    const dedTxt=[ded.W?`-${ded.W}`:'', ded.H?`-${ded.H}(H)`:'' ].filter(Boolean).join(' ');
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${main}` +
+       `<tspan font-size="13.6" font-weight="600" fill="#6B7280" dx="6">${orig}</tspan>` +
+       `<tspan font-size="13.6" font-weight="700" fill="#DC2626" dx="5">${dedTxt}</tspan></text>`;
   } else {
-    s+=`<text x="${cx}" y="${DW_VIEW.h-12}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${sizeTxt}</text>`;
+    s+=`<text x="${cx}" y="${Y}" text-anchor="middle" font-family="${FT}" font-size="17" font-weight="700" fill="#1E3A8A" shape-rendering="auto">${w.w||'—'} x ${w.h||'—'}</text>`;
   }
   s+='</svg>';
   return s;
@@ -1380,7 +1386,7 @@ function openDrawing(){
   $('#drawSheet').innerHTML=`
     <div class="dw-headerbar">현장: ${place||'—'} &nbsp;|&nbsp; 고객: ${siteName||'—'}${custPhone?' ('+custPhone+')':''} &nbsp;|&nbsp; ${today} &nbsp;|&nbsp; 총 ${windows.length}창 &nbsp;|&nbsp; 스케일 1:${ratio}</div>
     <div class="dw-grid">${windows.map((w,i)=>drawCard(w,i)+frameCard(w,i)).join('')}${tongbaSummary()}</div>
-    <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.<br>공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
+    <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.</div>`;
   applyPaper();
   $('#drawOverlay').classList.add('show');
 }
@@ -1433,10 +1439,10 @@ function renderQuote(){
   const head='';
   let table=`<table class="q-table"><tr><th class="q-hcorner">창 / 규격</th>${BRANDS.map(b=>`<th class="q-bh" style="background:${BRAND_COLORS[b.id]}">${b.brandFull}<small>${b.lineFull}</small></th>`).join('')}</tr>`;
   Q.rows.forEach(r=>{
-    table+=`<tr><td class="q-left">[${r.i+1}] ${r.w.location||'창'}<br><span style="font-family:var(--mono);font-weight:400;color:#888">${r.w.product||''} ${r.w.w}×${r.w.h} · ${r.unit}</span></td>${r.byBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+    table+=`<tr><td class="q-left">[${r.i+1}] ${r.w.location||'창'}<br><span style="font-family:var(--mono);font-weight:400;color:#888">${r.w.product||''} ${r.w.w}×${r.w.h}</span></td>${r.byBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   });
-  if(Q.tongbaBase>0) table+=`<tr><td class="q-left">통바 ${Q.tLen.toFixed(2)}m <span style="font-weight:400;color:#888">(15,000/m)</span></td>${Q.tongbaByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
-  if(Q.frameBase>0) table+=`<tr><td class="q-left">공틀 ${Q.fLen.toFixed(2)}m <span style="font-weight:400;color:#888">(18,000/m)</span></td>${Q.frameByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  if(Q.tongbaBase>0) table+=`<tr><td class="q-left">통바 <span style="font-weight:400;color:#888">${Q.tLen.toFixed(2)}m</span></td>${Q.tongbaByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
+  if(Q.frameBase>0) table+=`<tr><td class="q-left">공틀 <span style="font-weight:400;color:#888">${Q.fLen.toFixed(2)}m</span></td>${Q.frameByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-mat"><td class="q-left">자재비 합계</td>${Q.matByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-const-row"><td class="q-left">시공비 (공통)</td>${BRANDS.map(()=>`<td>${won(Q.constTotal)}</td>`).join('')}</tr>`;
   table+=`<tr class="q-sum"><td class="q-left">합계 (공급가)</td>${Q.totalByBrand.map(v=>`<td>${won(v)}</td>`).join('')}</tr>`;
@@ -1453,8 +1459,8 @@ function renderQuote(){
   $('#quoteBody').innerHTML=`<div class="dw-head"><b>${siteBuilding||siteName||'현장'} 창호 견적서</b>
     고객 ${siteName||'—'}${custPhone?' ('+custPhone+')':''}${place?'<br>📍 '+place:''}<br>총 ${Q.teul}창 · ${new Date().toLocaleDateString('ko-KR')}</div>
     ${head}${table}${cst}
-    <div class="q-note">※ 자재비 = 자평 × 자평단가 × 브랜드계수 / 옵션(로이·간봉·방충망 등) 별도 / 최소 15자평</div>
-    <div class="dw-slogan">공간에 가치를 더하는 프리미엄 창호, KCC글라스 홈씨씨창호</div>`;
+    <div class="q-note">※ 옵션(로이·간봉·방충망 등)은 별도 산정됩니다.</div>
+`;
 }
 // 권역 옵션 채우기
 BRANDS.length && (function(){ const sel=$('#qRegion'); if(sel) Object.keys(REGION_COSTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=`${k.split('/')[0]}… (${REGION_COSTS[k]}만)`; sel.appendChild(o); }); })();
