@@ -296,6 +296,7 @@
   .dw-scale button{width:26px;height:26px;border:none;background:transparent;font-size:15px;font-weight:700;color:var(--brand);border-radius:6px}
   .dw-scale button:active{background:var(--brand-soft)}
   .dw-scale span{font-family:var(--mono);font-size:11px;font-weight:700;min-width:38px;text-align:center;color:var(--ink)}
+  .dw-fixed{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:8px 12px}
   .dw-pageinfo{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--muted);padding:0 4px}
   .dw-pageinfo.warn{color:#B45309}
   .dw-exports{display:flex;gap:5px}
@@ -520,8 +521,7 @@
   <div class="dw-topbar dw-noprint">
     <button id="drawClose">✕ 닫기</button>
     <div class="dw-opts">
-      <select id="dwPaper"><option value="A4">A4</option><option value="A3" selected>A3</option></select>
-      <select id="dwOrient"><option value="landscape" selected>가로</option><option value="portrait">세로</option></select>
+      <span class="dw-fixed">A3 가로</span>
       <div class="dw-scale">
         <button id="dwZoomOut">−</button>
         <span id="dwScaleLabel">100%</span>
@@ -541,8 +541,7 @@
   <div class="dw-topbar dw-noprint">
     <button id="quoteClose">✕ 닫기</button>
     <div class="dw-opts">
-      <select id="qPaper"><option value="A4" selected>A4</option><option value="A3">A3</option></select>
-      <select id="qOrient"><option value="portrait">세로</option><option value="landscape" selected>가로</option></select>
+      <span class="dw-fixed">A4 가로</span>
     </div>
     <div class="dw-exports">
       <button id="quotePdf">📄 PDF</button>
@@ -1405,40 +1404,40 @@ function frameCard(w,i){
     <div class="dw-tags"><span class="dw-tag" style="visibility:hidden">-</span></div>
   </div>`;
 }
-/* ===== 출력 옵션 엔진 ===== */
-const PAPER_MM={A4:{w:210,h:297},A3:{w:297,h:420}};
-let dwZoom=1.0;   // 스케일 배율 (auto.py의 scale 옵션 역할)
-function paperSize(id,orient){
-  const p=PAPER_MM[id]||PAPER_MM.A3;
-  return orient==='landscape' ? {w:p.h,h:p.w} : {w:p.w,h:p.h};
-}
+/* ===== 출력 엔진 — A3 가로 고정 ===== */
+const A3L={w:420,h:297};   // A3 가로 (mm)
+const MARGIN=8;
+let dwZoom=1.0;            // 도면 배율 (auto.py의 scale 역할)
 function applyPaper(){
-  const paper=$('#dwPaper').value, orient=$('#dwOrient').value;
-  const P=paperSize(paper,orient);
-  const usableW=P.w-16;                       // 여백 8mm x2
-  const cardMM=48*dwZoom;                     // 카드 1개 기본 폭(mm) × 배율
+  const usableW=A3L.w-MARGIN*2;              // 404mm
+  const usableH=A3L.h-MARGIN*2;              // 281mm
+  const cardMM=46*dwZoom;                    // 카드 1개 폭(mm)
   const cols=Math.max(1, Math.floor(usableW/cardMM));
+  const cardW=usableW/cols;                  // 실제 카드 폭(mm) — 용지를 꽉 채움
   let st=document.getElementById('dwPageStyle');
   if(!st){ st=document.createElement('style'); st.id='dwPageStyle'; document.head.appendChild(st); }
-  // 인쇄 시: 용지 실폭 고정 + 카드 폭을 mm로 → 넘치면 자동 줄바꿈
-  st.textContent=`@page{size:${paper} ${orient};margin:8mm}
+  // 인쇄: A3 가로 용지를 mm 단위로 정확히 채움
+  st.textContent=`
+    @page{size:A3 landscape;margin:${MARGIN}mm}
     @media print{
-      #drawSheet{width:${usableW}mm !important;}
-      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important;}
+      #drawSheet{width:${usableW}mm !important; padding:0 !important; background:#fff !important}
+      #drawSheet .dw-grid{grid-template-columns:repeat(${cols}, 1fr) !important; gap:3mm !important}
+      #drawSheet .dw-headerbar{margin-bottom:3mm !important}
     }`;
   const sheet=$('#drawSheet');
   sheet.style.setProperty('--dwzoom', dwZoom);
+  sheet.style.setProperty('--dwcols', cols);
   $('#dwScaleLabel').textContent=Math.round(dwZoom*100)+'%';
-  // 페이지 수 추정
+  // 페이지 수 추정 (카드 높이 ≈ 폭 × 1.45)
   const total=document.querySelectorAll('#drawSheet .dw-card').length;
   const rows=Math.ceil(total/cols);
-  const rowMM=74*dwZoom;
-  const perPage=Math.max(1,Math.floor((P.h-30)/rowMM));
+  const rowMM=cardW*1.45+3;
+  const perPage=Math.max(1,Math.floor((usableH-14)/rowMM));
   const pages=Math.max(1,Math.ceil(rows/perPage));
-  $('#dwPageInfo').textContent=`${cols}단 · ${pages}p`;
+  $('#dwPageInfo').textContent=`${cols}단 · ${pages}페이지`;
   $('#dwPageInfo').classList.toggle('warn', pages>1);
 }
-$('#dwZoomIn').addEventListener('click',()=>{ dwZoom=Math.min(2.0, +(dwZoom+0.1).toFixed(2)); applyPaper(); });
+$('#dwZoomIn').addEventListener('click',()=>{ dwZoom=Math.min(2.5, +(dwZoom+0.1).toFixed(2)); applyPaper(); });
 $('#dwZoomOut').addEventListener('click',()=>{ dwZoom=Math.max(0.5, +(dwZoom-0.1).toFixed(2)); applyPaper(); });
 
 /* PNG 저장 — html2canvas (SVG 포함 안정 렌더) */
@@ -1482,12 +1481,12 @@ function openDrawing(){
   applyPaper();
   $('#drawOverlay').classList.add('show');
 }
-['#dwPaper','#dwOrient'].forEach(id=>$(id).addEventListener('change',applyPaper));
+
 $('#drawBtn').addEventListener('click',openDrawing);
 $('#drawClose').addEventListener('click',()=>$('#drawOverlay').classList.remove('show'));
 $('#drawPdf').addEventListener('click',()=>{
   applyPaper();
-  toast(`인쇄창에서 '${$('#dwPaper').value} ${$('#dwOrient').value==='landscape'?'가로':'세로'}' 확인 후 저장`);
+  toast('인쇄창에서 용지를 A3 · 가로로 확인하세요');
   setTimeout(()=>window.print(),400);
 });
 $('#drawPng').addEventListener('click',()=>exportPNG('#drawSheet', fileBase()+'_도면.png'));
@@ -1564,17 +1563,19 @@ BRANDS.length && (function(){ const sel=$('#qRegion'); if(sel) Object.keys(REGIO
 $('#quoteBtn').addEventListener('click',()=>{ renderQuote(); $('#quoteOverlay').classList.add('show'); });
 $('#quoteClose').addEventListener('click',()=>$('#quoteOverlay').classList.remove('show'));
 function applyQuotePaper(){
-  const paper=$('#qPaper').value, orient=$('#qOrient').value;
-  const P=paperSize(paper,orient); const usableW=P.w-20;
+  const usableW=297-20;   // A4 가로
   let st=document.getElementById('qPageStyle');
   if(!st){ st=document.createElement('style'); st.id='qPageStyle'; document.head.appendChild(st); }
-  st.textContent=`@page{size:${paper} ${orient};margin:10mm}
-    @media print{ #quoteOverlay .dw-sheet{width:${usableW}mm !important;} }`;
+  st.textContent=`
+    @page{size:A4 landscape;margin:10mm}
+    @media print{
+      #quoteOverlay .dw-sheet{width:${usableW}mm !important; padding:0 !important; background:#fff !important}
+      #quoteOverlay .q-cond{display:none !important}
+    }`;
 }
-['#qPaper','#qOrient'].forEach(id=>$(id).addEventListener('change',applyQuotePaper));
 $('#quotePdf').addEventListener('click',()=>{
   applyQuotePaper();
-  toast(`인쇄창에서 '${$('#qPaper').value} ${$('#qOrient').value==='landscape'?'가로':'세로'}' 확인 후 저장`);
+  toast('인쇄창에서 용지를 A4 · 가로로 확인하세요');
   setTimeout(()=>window.print(),400);
 });
 $('#quotePng').addEventListener('click',()=>exportPNG('#quoteBody', fileBase()+'_견적서.png'));
