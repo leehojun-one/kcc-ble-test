@@ -41,7 +41,7 @@
 
   .site-bar{display:flex;gap:8px;padding:0 2px}
   .toolbar-top{display:flex;gap:7px;padding:9px 2px 0}
-  .toolbar-top button{flex:1;font-size:12.5px;font-weight:600;padding:12px 8px;border-radius:14px;border:none;background:var(--surface);color:var(--ink-2);box-shadow:var(--shadow)}
+  .toolbar-top button{flex:1;font-size:11.5px;font-weight:600;padding:12px 5px;white-space:nowrap;border-radius:14px;border:none;background:var(--surface);color:var(--ink-2);box-shadow:var(--shadow)}
   .toolbar-top button:active{background:var(--brand-soft);color:var(--brand);transform:scale(.96)}
   .site-input{flex:1;font-family:var(--sans);font-size:14px;font-weight:500;padding:14px 16px;border:1.5px solid transparent;border-radius:14px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);transition:all .16s}
   .site-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
@@ -53,6 +53,18 @@
   .load-item .li-main span{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px}
   .load-item .li-del{background:transparent;border:1px solid var(--hair);color:var(--alert);font-size:12px;font-weight:600;padding:7px 11px;border-radius:8px;flex:none}
 
+  /* 상담이력(문서함) */
+  .doc-group{margin-bottom:16px}
+  .doc-code{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);font-weight:600;padding:0 2px 6px}
+  .doc-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:11px 12px;margin-bottom:7px}
+  .doc-badge{font-family:var(--sans);font-size:11px;font-weight:700;color:#fff;background:var(--brand);border-radius:7px;padding:5px 8px;flex:none}
+  .doc-info{flex:1;min-width:0}
+  .doc-info b{font-size:13.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .doc-info span{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:block;margin-top:2px}
+  .doc-actions{display:flex;gap:5px;flex:none}
+  .doc-actions button{font-size:11.5px;font-weight:600;padding:7px 9px;border-radius:8px;border:1px solid var(--hair);background:var(--surface-2);color:var(--ink)}
+  .doc-actions button.load{background:var(--brand);border-color:var(--brand);color:#fff}
+  .doc-note{font-family:var(--sans);font-size:11.5px;color:var(--muted);line-height:1.6;background:var(--surface-2);border-radius:10px;padding:10px 12px;margin-bottom:12px}
   .spec-sub{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:2px 0 8px}
   .spec-sub:not(:first-child){margin-top:15px}
   .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -427,6 +439,7 @@
   <input class="site-input" id="addrDisplay" placeholder="🔍 주소 검색 (탭하여 검색)" readonly style="width:100%;margin-top:7px;cursor:pointer">
   <div class="toolbar-top">
     <button id="saveTopBtn">💾 저장</button>
+    <button id="docsBtn">📁 상담이력</button>
     <button id="loadBtn">📂 불러오기</button>
     <button id="newBtn">＋ 새 실측</button>
   </div>
@@ -583,7 +596,7 @@
 <div class="toast" id="toast"></div>
 
 <div class="overlay" id="overlay"><div class="sheet">
-  <h3>실측 완료</h3><div class="lead" id="sumLead"></div><div id="sumList"></div>
+  <h3>상담 저장 완료</h3><div class="lead" id="sumLead"></div><div id="sumList"></div>
   <button class="btn close" id="closeSheet">닫기</button>
 </div></div>
 
@@ -592,6 +605,13 @@
   <div class="lead" id="detailRoad"></div>
   <input class="site-input" id="detailInput" placeholder="동/호" style="width:100%;margin-bottom:10px">
   <button class="btn close" id="detailDone" style="width:100%">확인</button>
+</div></div>
+
+<div class="overlay" id="docsOverlay"><div class="sheet">
+  <h3>상담 이력</h3><div class="lead" id="docsLead"></div>
+  <div class="doc-note">저장할 때마다 차수가 하나씩 쌓입니다. 이전 차수는 덮어쓰이거나 지워지지 않아요.</div>
+  <div id="docsList"></div>
+  <button class="btn ghost close" id="docsClose">닫기</button>
 </div></div>
 
 <div class="overlay" id="loadOverlay"><div class="sheet">
@@ -636,13 +656,13 @@ const CONSULT_GROUP={
 };
 // 그룹별 선택지 (유리두께/외측/내측/색상/간봉/잠금/방충망/옵션)
 const CONSULT_OPTS={
-  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드','아르곤가스']},
-  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
-  FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
+  G2:{thick:['26T','28T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들','전용핸들'],handle:['없음','400','450','500'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','방충망핸들','윈드가드','아르곤가스']},
+  G3:{thick:['22T','24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:['투명+투명','투명+로이'],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['자동핸들','크리센트','수동핸들','양방향핸들'],handle:['없음','400','450','500'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
+  FIX:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:[],handle:['없음','400','450','500'],screen:['없음','AL','S/ST(BL)','안전망'],opts:['없음','아르곤가스']},
   TD:{door:['미는문','당기는문'],thick:['24T'],outer:['투명+투명','투명+로이'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:[],opts:['없음','아르곤가스']},
   PJ:{thick:['24T'],outer:['투명+투명','투명+로이','더블로이+투명'],inner:[],color:['투명','미스트','모루'],gap:['일반AL','단열간봉'],lock:['전용핸들'],screen:['없음','롤방충망'],opts:['없음','아르곤가스']}
 };
-const SPEC_LABELS={door:'문 방향',thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',screen:'방충망',opts:'추가옵션'};
+const SPEC_LABELS={door:'문 방향',thick:'유리 두께',outer:'외측 유리사양',inner:'내측 유리사양',color:'유리 색상',gap:'간봉',lock:'잠금장치',handle:'핸들 높이',screen:'방충망',opts:'추가옵션'};
 // 브랜드 (순서 = 라인업 배열 순서), coef=단가계수
 const BRANDS=[
   {id:'kcc_villaz',brand:'KCC홈씨씨완성창',line:'HW_ONE 빌라즈',coef:110, brandFull:'KCC글라스완성창', lineFull:'HW_ONE (빌라즈)'},
@@ -737,7 +757,7 @@ function shapeLabel(id){ const s=SHAPES.find(x=>x.id===id); return s?s.label:id;
 
 let device=null, characteristic=null, windows=[], current=blankWindow(), activeId=null;
 let siteName='', custPhone='', siteAddr='', siteBuilding='', siteDetail='', sessionId=null, editingIndex=null;
-function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[],door:''}}; }
+function blankWindow(){ return {photo:null,location:'',product:'',shape:'2W',side:'좌',data:{},w:null,h:null,v:null,glass:'',colorIn:'',colorOut:'',options:[],tongba:{top:[],bottom:[],left:[],right:[]},frame:'',brand:'',spec:{thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',handle:'',screen:'',opts:[],door:''}}; }
 const $=s=>document.querySelector(s);
 
 /* ===== 기기 저장소 (localStorage) ===== */
@@ -958,7 +978,7 @@ $('#saveTopBtn').addEventListener('click',()=>{ if(commitSession(true)) toast('�
 
 /* 새 실측(초기화) */
 function startNewSession(){
-  siteName=''; custPhone=''; siteAddr=''; siteBuilding=''; siteDetail=''; sessionId=null; editingIndex=null; windows=[]; current=blankWindow();
+  siteName=''; custPhone=''; siteAddr=''; siteBuilding=''; siteDetail=''; sessionId=null; sessionCodeVal=null; editingIndex=null; windows=[]; current=blankWindow();
   $('#siteInput').value=''; $('#custPhone').value=''; $('#addrDisplay').value='';
   expandedIdx=-1; phase='measuring'; loadIntoForm(current); setActive('W1'); renderTray(); autosave(); switchTab('measure');
 }
@@ -1021,6 +1041,14 @@ function specSection(w,i){
     let arr=O[key]; if(!arr||!arr.length) return '';
     if(key==='inner'&&!dbl) return '';                            // 단창은 내측 없음
     if(key==='lock'&&dbl) arr=arr.filter(x=>x!=='양방향핸들');   // 이중창 양방향핸들 불가
+    if(key==='handle'){                                   // 핸들 높이 — 프리셋 + 직접입력
+      const cur=String(sp.handle||'');
+      const preset=arr, custom = cur && preset.indexOf(cur)<0;
+      let c=preset.map(o=>`<button class="spec-chip ${cur===o?'sel':''}" data-spec="handle" data-val="${o}" data-multi="0" data-ci="${i}">${o}</button>`).join('');
+      if(custom) c+=`<button class="spec-chip sel" data-spec="handle" data-val="${cur}" data-multi="0" data-ci="${i}">${cur}</button>`;
+      c+=`<button class="spec-chip" data-hcustom="1" data-ci="${i}">직접입력</button>`;
+      return `<div class="c-sub">${SPEC_LABELS.handle} <span style="font-weight:400;opacity:.7">(바닥에서 mm)</span></div><div class="spec-chips">${c}</div>`;
+    }
     const multi=(key==='opts');
     const chips=arr.map(o=>{
       const sel = multi ? (sp[key]||[]).includes(o) : sp[key]===o;
@@ -1030,7 +1058,7 @@ function specSection(w,i){
     if(key==='opts') lbl += ' <span style="font-weight:400;opacity:.7">(복수 선택 가능)</span>';
     return `<div class="c-sub">${lbl}</div><div class="spec-chips">${chips}</div>`;
   };
-  return ['door','thick','outer','inner','color','gap','lock','screen','opts'].map(row).join('');
+  return ['door','thick','outer','inner','color','gap','lock','handle','screen','opts'].map(row).join('');
 }
 /* 상담탭에서 사이즈 직접 편집 (실측탭 안 가도 됨) */
 function sizeEditor(w,i){
@@ -1103,8 +1131,14 @@ $('#consultList').addEventListener('click',e=>{
   const cel=e.target.closest('[data-ci]'); if(!cel)return; const i=+cel.dataset.ci; const w=windows[i]; if(!w)return;
   const cs=e.target.closest('[data-csize]');
   if(cs){ openKeypad(cs.dataset.csize, i); return; }                  // 상담탭 사이즈 수정
+  const hc=e.target.closest('[data-hcustom]');
+  if(hc){ const cur=(w.spec&&w.spec.handle)||'450';
+    const v=prompt('핸들 높이를 입력하세요 (바닥에서 mm)', /^[0-9]+$/.test(String(cur))?cur:'450');
+    if(v!=null){ const n=parseInt(String(v).replace(/[^0-9]/g,''));
+      if(n>0){ w.spec=w.spec||{}; w.spec.handle=String(n); renderConsult(); autosave(); } }
+    return; }
   const pc=e.target.closest('[data-prodc]');
-  if(pc){ w.product=(w.product===pc.dataset.prodc)?'':pc.dataset.prodc; w.spec={thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',screen:'',opts:[],door:''}; renderConsult(); renderTray(); autosave(); return; }
+  if(pc){ w.product=(w.product===pc.dataset.prodc)?'':pc.dataset.prodc; w.spec={thick:'',outer:'',inner:'',color:'투명',gap:'',lock:'',handle:'',screen:'',opts:[],door:''}; renderConsult(); renderTray(); autosave(); return; }
   const sh=e.target.closest('[data-shapec]'),sd=e.target.closest('[data-sidec]');
   const tf=e.target.closest('[data-tface]'),tdel=e.target.closest('[data-tdel]'),fr=e.target.closest('[data-framec]');
   const sp=e.target.closest('[data-spec]');
@@ -1140,6 +1174,7 @@ function missingSpecs(w){
   if(O.door && O.door.length) need.unshift(['door','문 방향']);
   if(dbl && O.inner && O.inner.length) need.push(['inner','내측유리']);
   if(O.lock && O.lock.length) need.push(['lock','잠금장치']);
+  if(O.handle && O.handle.length) need.push(['handle','핸들높이']);
   if(O.screen && O.screen.length) need.push(['screen','방충망']);
   if(O.opts && O.opts.length) need.push(['opts','추가옵션']);
   need.forEach(([k,lab])=>{
@@ -1205,6 +1240,12 @@ function ventArrow(cx,cy,dir,len){
   return `<line x1="${tail}" y1="${cy}" x2="${tip}" y2="${cy}" stroke="#000" stroke-width="1.4" shape-rendering="auto"/>`+
          `<polyline points="${tip-d*4},${cy-3} ${tip},${cy} ${tip-d*4},${cy+3}" fill="none" stroke="#000" stroke-width="1.4" shape-rendering="auto"/>`;
 }
+/* 하단 중앙 손잡이 (PJ창) — 창 하단 가운데 ㄷ자 손잡이 */
+function bottomHandle(cx,yBottom){
+  const W=22,H=7;
+  return `<path d="M${cx-W/2},${yBottom} L${cx-W/2},${yBottom-H} L${cx+W/2},${yBottom-H} L${cx+W/2},${yBottom}" fill="none" stroke="#111" stroke-width="2.2" stroke-linejoin="miter" shape-rendering="auto"/>`+
+         `<rect x="${cx-W/2-1.5}" y="${yBottom-H-1.5}" width="${W+3}" height="2.2" fill="#111" shape-rendering="auto"/>`;
+}
 /* 터닝도어 핸들 (좌/우) */
 function doorHandle(x,cy,side){
   const d=(side==='좌'?1:-1);
@@ -1238,9 +1279,14 @@ function bigDiagramSVG(w){
   const glassFill = isMist?'url(#mistPat)' : isMoru?'url(#moruPat)' : '#fff';
   s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="${glassFill}" stroke="#000" stroke-width="1.2"/>`;
   s+=shapeSplit(w,fx,fy,fw,fh);
+  if(def.pj) s+=bottomHandle(cx, fy+fh);                // PJ창: 하단 중앙 손잡이
   if(def.fix) s+=`<text x="${cx}" y="${fy+fh/2}" text-anchor="middle" dominant-baseline="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="20" font-weight="700" shape-rendering="auto">Fix</text>`;
   if(isMist||isMoru) s+=`<text x="${cx}" y="${fy+Math.min(20,fh*0.2)}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="${isMist?'#DC2626':'#0F766E'}" shape-rendering="auto">${sp.color}</text>`;
   const ym=fy+fh/2;
+  /* 핸들 높이 — 바닥에서 h만큼 위에 빨간 점선 + 우측 바깥에 라벨 (auto.py 방식) */
+  const hH=parseInt(sp.handle);
+  const hasHandleH = !isNaN(hH) && hH>0;
+  const handleY = hasHandleH ? Math.max(fy+2, Math.min(fy+fh-2, fy+fh-hH*S)) : null;
   const sym=(x,y,txt,size,col)=>`<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="${size||14}" font-weight="700" fill="${col||'#000'}" shape-rendering="auto">${txt}</text>`;
   const scr=(x,y)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="12" font-weight="700" fill="#DC2626" shape-rendering="auto">#(망)</text>`;
   const vtxt=(x,y)=>('V' in w.data)?`<text x="${x}" y="${y}" text-anchor="middle" font-family="'Malgun Gothic','맑은 고딕',sans-serif" font-size="13" font-weight="700" fill="#DC2626" shape-rendering="auto">${w.data['V']}</text>`:'';
@@ -1264,6 +1310,12 @@ function bigDiagramSVG(w){
     s+=vtxt(vcx,ym+18);
   } else if(hasScreen && !def.fix){
     s+=scr(cx,fy+14);
+  }
+  // 핸들 높이 점선 · 라벨 (터닝도어·PJ창은 손잡이 모양으로 이미 표시)
+  if(hasHandleH && !def.handle && !def.pj){
+    const rightTB=(t.right||[]).reduce((a,id)=>a+Math.max(3,tbDrawMM(id)*S),0);
+    s+=`<line x1="${fx}" y1="${handleY}" x2="${fx+fw}" y2="${handleY}" stroke="#DC2626" stroke-width="0.9" stroke-dasharray="5,3" opacity="0.75" shape-rendering="auto"/>`;
+    s+=`<text x="${fx+fw+rightTB+5}" y="${handleY}" dominant-baseline="middle" font-family="${"'Malgun Gothic','맑은 고딕',sans-serif"}" font-size="9" font-weight="700" fill="#DC2626" shape-rendering="auto">핸들 ${hH}</text>`;
   }
   // 사이즈 (파랑, 순치수) — 도면 하단 고정
   const hasDed=(ded.W||ded.H);
@@ -1862,9 +1914,109 @@ $('#confirmNextBtn').addEventListener('click',saveCurrentWindow);
 function genCode(saved){
   const d=new Date(); const yy=String(d.getFullYear()).slice(2);
   const ymd=yy+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  const n=saved.filter(s=>(s.code||'').startsWith(ymd)).length+1;
+  const used=new Set([...(saved||[]),...(LS.get('kcc_docs')||[])].map(x=>x.code||'').filter(c=>c.startsWith(ymd)));
+  const n=used.size+1;
   return ymd+String(n).padStart(3,'0');
 }
+/* ===== 상담 이력(문서함) — 차수별 append-only 저장 ===== */
+let sessionCodeVal=null;
+function ensureCode(){
+  if(sessionCodeVal) return sessionCodeVal;
+  const saved=LS.get('kcc_saved')||[];
+  const existing = sessionId ? saved.find(x=>x.id===sessionId) : null;
+  sessionCodeVal = existing?.code || genCode(saved);
+  return sessionCodeVal;
+}
+function placeText(){ return [siteBuilding||siteAddr, siteDetail].filter(Boolean).join(' ').trim(); }
+function nextVer(){
+  const code=ensureCode();
+  return (LS.get('kcc_docs')||[]).filter(d=>d.code===code).length + 1;
+}
+function docTitle(ver){
+  return `${ver}차 상담 ${ensureCode()} ${placeText()||siteName||'현장'}`.trim();
+}
+/* 저장 = 항상 새 차수 추가 (덮어쓰기 없음) */
+function saveDoc(){
+  if(!windows.length){ toast('저장할 창이 없어요'); return null; }
+  if(!siteName){ toast('고객명을 입력하세요'); return null; }
+  const ver=nextVer();
+  const rec={ id:'d'+Date.now()+Math.random().toString(36).slice(2,6),
+    code:ensureCode(), ver, title:docTitle(ver),
+    site:siteName, phone:custPhone, addr:siteAddr, building:siteBuilding, detail:siteDetail,
+    ts:Date.now(), windows:JSON.parse(JSON.stringify(windows)) };
+  const docs=LS.get('kcc_docs')||[];
+  docs.unshift(rec);
+  if(!LS.set('kcc_docs',docs)){ toast('저장 공간 부족 — 오래된 실측을 정리하세요'); return null; }
+  return rec;
+}
+/* 문서함 열기 — 현장(코드)별로 묶어 차수 최신순 */
+function openDocs(){
+  const docs=LS.get('kcc_docs')||[];
+  $('#docsLead').textContent = docs.length
+    ? `${docs.length}건 · [도면]은 그때 그대로 보기, [불러오기]는 이어서 작업`
+    : '아직 저장된 상담이 없어요';
+  const byCode={};
+  docs.forEach(d=>{ (byCode[d.code]=byCode[d.code]||[]).push(d); });
+  const box=$('#docsList');
+  box.innerHTML = Object.keys(byCode).sort().reverse().map(code=>{
+    const items=byCode[code].sort((a,b)=>b.ver-a.ver);
+    const head=items[0];
+    const rows=items.map(d=>{
+      const dt=new Date(d.ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});
+      return `<div class="doc-row">
+        <span class="doc-badge">${d.ver}차</span>
+        <div class="doc-info"><b>${d.title}</b><span>${d.site||'—'} · 창 ${d.windows.length}개 · ${dt}</span></div>
+        <div class="doc-actions"><button data-doc="${d.id}">도면</button><button class="load" data-docload="${d.id}">불러오기</button></div>
+      </div>`;
+    }).join('');
+    return `<div class="doc-group"><div class="doc-code">${code} · ${head.site||''} ${placeOf(head)}</div>${rows}</div>`;
+  }).join('') || '<div class="c-empty">저장된 상담이 없어요<br>상담 탭에서 「✓ 상담 완료」를 누르면 1차로 저장됩니다</div>';
+  $('#docsOverlay').classList.add('show');
+}
+function placeOf(d){ return [d.building||d.addr, d.detail].filter(Boolean).join(' '); }
+/* 불러오기 — 저장본을 현재 작업으로 가져와 다음 차수로 이어감 */
+function loadDoc(id){
+  const d=(LS.get('kcc_docs')||[]).find(x=>x.id===id); if(!d) return;
+  if(windows.length && !confirm(`작업 중인 내용을 닫고 아래 상담을 불러옵니다.\n\n  ${d.title}\n\n계속할까요?`)) return;
+  siteName=d.site||''; custPhone=d.phone||''; siteAddr=d.addr||''; siteBuilding=d.building||''; siteDetail=d.detail||'';
+  $('#siteInput').value=siteName; $('#custPhone').value=custPhone; showFullAddr();
+  sessionId=null; sessionCodeVal=d.code; editingIndex=null;
+  windows=JSON.parse(JSON.stringify(d.windows)); current=blankWindow();
+  phase='consulted'; expandedIdx = windows.length?0:-1;
+  loadIntoForm(current); renderTray(); autosave(); updateCustGate();
+  $('#docsOverlay').classList.remove('show');
+  switchTab('consult');
+  toast(`${d.title} 불러옴 — 저장하면 ${d.ver+1}차가 됩니다`);
+}
+/* 열람 — 저장본 그대로 도면 출력 (현재 작업엔 영향 없음) */
+function viewDoc(id){
+  const d=(LS.get('kcc_docs')||[]).find(x=>x.id===id); if(!d) return;
+  const live=windows, lname=siteName, lphone=custPhone, laddr=siteAddr, lbld=siteBuilding, ldet=siteDetail;
+  try{
+    windows=d.windows; siteName=d.site||''; custPhone=d.phone||''; siteAddr=d.addr||''; siteBuilding=d.building||''; siteDetail=d.detail||'';
+    computeDrawScale(); computeCommonOptions();
+    const dt=new Date(d.ts).toLocaleDateString('ko-KR');
+    const ratio=Math.round(1/(DRAW_SCALE*3.7795));
+    $('#drawSheet').innerHTML=`
+      <div class="dw-headerbar">${d.title} &nbsp;|&nbsp; 고객: ${d.site||'—'}${d.phone?' ('+d.phone+')':''} &nbsp;|&nbsp; ${dt} &nbsp;|&nbsp; 총 ${d.windows.length}창 &nbsp;|&nbsp; 스케일 1:${ratio}</div>
+      <div class="dw-grid">${d.windows.map((w,i)=>drawCard(w,i)+frameCard(w,i)).join('')}${tongbaSummary()}</div>
+      <div class="dw-slogan">◎ 도면에 표기된 치수(사이즈)는 통바 제외한 창호 사이즈 입니다.</div>`;
+    applyPaper();
+  } finally {
+    windows=live; siteName=lname; custPhone=lphone; siteAddr=laddr; siteBuilding=lbld; siteDetail=ldet;
+  }
+  $('#docsOverlay').classList.remove('show');
+  $('#drawOverlay').classList.add('show');
+}
+$('#docsBtn').addEventListener('click',openDocs);
+$('#docsClose').addEventListener('click',()=>$('#docsOverlay').classList.remove('show'));
+$('#docsOverlay').addEventListener('click',e=>{ if(e.target===$('#docsOverlay')) $('#docsOverlay').classList.remove('show'); });
+$('#docsList').addEventListener('click',e=>{
+  const v=e.target.closest('[data-doc]'); const l=e.target.closest('[data-docload]');
+  if(l){ loadDoc(l.dataset.docload); return; }
+  if(v){ viewDoc(v.dataset.doc); }
+});
+
 /* 세션 확정 저장 (기기) */
 function commitSession(includeDraft){
   const all=[...windows];
@@ -1877,7 +2029,8 @@ function commitSession(includeDraft){
   const saved=LS.get('kcc_saved')||[];
   const existing = sessionId ? saved.find(x=>x.id===sessionId) : null;
   const id = sessionId || ('s'+Date.now());
-  const code = existing?.code || genCode(saved);
+  const code = existing?.code || sessionCodeVal || genCode(saved);
+  sessionCodeVal = code;
   const place = siteBuilding || siteAddr || siteName;
   const label = `${code} ${place}${siteDetail?' '+siteDetail:''}`.trim();
   const rec={id,code,label,site:siteName,phone:custPhone,addr:siteAddr,building:siteBuilding,detail:siteDetail,ts:Date.now(),windows:all};
@@ -1904,9 +2057,15 @@ $('#doneBtn').addEventListener('click',()=>{
     toast(`[${first.i+1}] ${windows[first.i].location||'창'} — ${first.miss.join(', ')} 선택 필요 (미완 ${bad.length}창)`);
     return;
   }
+  const ver=nextVer();
+  const msg = ver===1
+    ? `상담 내용을 저장합니다.\n\n  ${docTitle(1)}\n\n· 이 시점의 상담 내용이 1차로 보관됩니다\n· 이후 수정해도 이 저장본은 그대로 남습니다\n\n저장할까요?`
+    : `상담 내용을 ${ver}차로 저장합니다.\n\n  ${docTitle(ver)}\n\n· 기존 1차~${ver-1}차는 그대로 보존됩니다\n· 덮어쓰기가 아니라 이력이 하나 더 쌓입니다\n\n저장할까요?`;
+  if(!confirm(msg)) return;
   if(!commitSession())return;
+  const doc=saveDoc(); if(!doc) return;
   const saved=LS.get('kcc_saved')||[]; const rec=saved.find(x=>x.id===sessionId);
-  $('#sumLead').textContent=`${rec.label||siteName} · 총 ${rec.windows.length}개 창 · 상담 완료 ✓`;
+  $('#sumLead').textContent=`${doc.title} · 총 ${rec.windows.length}개 창 · 저장 완료 ✓`;
   const list=$('#sumList'); list.innerHTML='';
   rec.windows.forEach((w,i)=>{ const item=document.createElement('div'); item.className='sum-item';
     const jub=('V' in w.data)?` · 벤트 ${w.data['V']}`:'';
@@ -1941,6 +2100,7 @@ function loadSession(id){
   $('#siteInput').value=siteName; $('#custPhone').value=custPhone; sessionId=rec.id; editingIndex=null;
   showFullAddr();
   windows=JSON.parse(JSON.stringify(rec.windows)); current=blankWindow();
+  sessionCodeVal=rec.code||null;
   phase='consulted';
   loadIntoForm(current); renderTray(); autosave();
   $('#loadOverlay').classList.remove('show');
